@@ -62,8 +62,9 @@ are not appropriate targets for an automated caller at all.
 Most call skills return prose and let the reader interpret it. This one returns a **pinned,
 validated object**, and refuses to return anything else.
 
-The Goal's `result_schema` sets `additionalProperties: false` and constrains three fields to
-enumerations. If the call comes back shaped differently, the result is quarantined rather
+The Goal's `result_schema` sets `additionalProperties: false` and constrains four fields to
+enumerations — `payment_method`, `appointment_required`, `originals_or_copies` and
+`clerk_certainty`, each of which includes a value for "the clerk did not know". If the call comes back shaped differently, the result is quarantined rather
 than rendered. A half-parsed checklist is worse than no checklist, because the user acts
 on it.
 
