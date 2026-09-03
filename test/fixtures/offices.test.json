@@ -1,0 +1,38 @@
+[
+  {
+    "id": "fixture-sourced",
+    "name": "Kantor Fixture Tersumber",
+    "city": "Jakarta Selatan",
+    "phone_e164": "+622112345678",
+    "source_url": "https://example.invalid/fixture",
+    "source_checked": "2026-09-03",
+    "procedures": ["perpanjangan paspor"]
+  },
+  {
+    "id": "fixture-placeholder",
+    "name": "Kantor Fixture Placeholder",
+    "city": "Jakarta Selatan",
+    "phone_e164": "+62XXXXXXXXXX",
+    "source_url": "https://example.invalid/fixture",
+    "source_checked": null,
+    "procedures": ["perpanjangan paspor"]
+  },
+  {
+    "id": "fixture-unsourced",
+    "name": "Kantor Fixture Tanpa Sumber",
+    "city": "Bandung",
+    "phone_e164": "+622212345678",
+    "source_url": null,
+    "source_checked": null,
+    "procedures": ["perpanjangan paspor"]
+  },
+  {
+    "id": "fixture-local-format",
+    "name": "Kantor Fixture Nomor Lokal",
+    "city": "Surabaya",
+    "phone_e164": "0211234567",
+    "source_url": "https://example.invalid/fixture",
+    "source_checked": "2026-09-03",
+    "procedures": ["perpanjangan paspor"]
+  }
+]
