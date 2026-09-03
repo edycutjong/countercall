@@ -13,7 +13,9 @@
     "test:coverage": "node --experimental-test-coverage --test \"test/**/*.test.mjs\"",
     "audit": "npm audit --audit-level=high",
     "bench": "node scripts/bench.mjs",
-    "ci": "npm run lint && npm run test && npm run audit"
+    "check:counts": "node scripts/check_counts.mjs",
+    "check:web": "node scripts/check_web.mjs",
+    "ci": "npm run lint && npm run test && npm run check:counts && npm run check:web && npm run audit"
   },
   "engines": {
     "node": ">=20"

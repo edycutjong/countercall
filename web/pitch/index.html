@@ -110,6 +110,9 @@ p{font-size:22px;line-height:1.5;color:var(--text-mid);max-width:60ch}
 .col{display:flex;flex-direction:column;gap:26px}
 .g60{flex:0 0 58%}.g40{flex:0 0 34%}
 .top{margin-bottom:auto}
+/* Body blocks share the leftover space with .top instead of being pinned
+   to the floor by it. Without this the frame reads as half-empty. */
+.mid{margin:auto 0}
 .bot{margin-top:auto}
 .rule{height:1px;background:var(--line);margin:26px 0}
 
@@ -130,6 +133,11 @@ p{font-size:22px;line-height:1.5;color:var(--text-mid);max-width:60ch}
 .crow .v{font-weight:600}
 .spoken .v{color:var(--color-accent)}                    /* a clerk said it */
 .unsaid .v{color:var(--color-primary);opacity:.5}        /* nobody said it  */
+/* A filled row shown as a bar, not as a value. This slide argues about the
+   EMPTY row; inventing "Cash" to fill the others would be the thing it
+   argues against. */
+.bar2{display:inline-block;width:124px;height:15px;border-radius:4px;
+      background:var(--color-accent);opacity:.85}
 .unsaid .box{display:inline-block;width:92px;height:15px;border-radius:3px;
       border:1px dashed var(--color-primary);opacity:.55}
 .docs{list-style:none;margin:14px 0 6px}
@@ -266,9 +274,9 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
     </div>
     <div class="g40">
       <div class="card" data-mock style="width:100%">
-        <div class="crow spoken"><span class="k">Payment</span><span class="v">Cash</span></div>
+        <div class="crow spoken"><span class="k">Payment</span><span class="bar2"></span></div>
         <div class="crow unsaid"><span class="k">Fee</span><span class="v"><span class="box"></span></span></div>
-        <div class="crow spoken"><span class="k">Appointment</span><span class="v">Book first</span></div>
+        <div class="crow spoken"><span class="k">Appointment</span><span class="bar2" style="width:96px"></span></div>
       </div>
     </div>
   </div>
@@ -281,7 +289,7 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
     <span class="kicker">The errand</span>
     <h2>Sent home for<br>a photocopy.</h2>
   </div>
-  <div class="row" style="flex:0">
+  <div class="row mid" style="flex:0">
     <div class="g60">
       <p class="lead">The page says bring KTP, KK, paspor lama. Not that the family card must be original, or that you must book first.</p>
     </div>
@@ -300,7 +308,7 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
     <span class="kicker">The solution</span>
     <h2>One call.<br>Seven typed fields.</h2>
   </div>
-  <div class="row" style="flex:0">
+  <div class="row mid" style="flex:0">
     <div class="g60">
       <div class="term" data-mock>
         <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
@@ -387,9 +395,9 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
     <span class="kicker">Verification</span>
     <h2>The whole input<br>space, not samples.</h2>
   </div>
-  <div class="stats" style="margin-top:auto">
+  <div class="stats mid">
     <div class="stat"><div class="n">11,520</div><div class="l">contract cases verified</div></div>
-    <div class="stat"><div class="n">210</div><div class="l">tests, no credentials</div></div>
+    <div class="stat"><div class="n">232</div><div class="l">tests, no credentials</div></div>
     <div class="stat"><div class="n">8 / 8</div><div class="l">CALL-E error codes routed</div></div>
     <div class="stat"><div class="n amber">1</div><div class="l">real defect the sweep found</div></div>
   </div>
@@ -461,7 +469,7 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
     <span class="kicker">The contribution</span>
     <h2>A procedure library,<br>not an app.</h2>
   </div>
-  <div class="row" style="flex:0">
+  <div class="row mid" style="flex:0">
     <div class="g60">
       <div class="term" data-mock>
         <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i>
@@ -501,7 +509,6 @@ QR code<br>pending
       </div>
     </div>
   </div>
-  <div class="bot kicker">v0.0.0-dev</div>
 </section>
 
 </div><!-- /#stage -->

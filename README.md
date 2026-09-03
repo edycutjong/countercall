@@ -22,7 +22,7 @@
   ![Node.js](https://img.shields.io/badge/Node.js_≥20-339933?style=flat&logo=node.js&logoColor=white)
   ![JavaScript](https://img.shields.io/badge/JavaScript_ESM-F7DF1E?style=flat&logo=javascript&logoColor=black)
   ![CALL-E](https://img.shields.io/badge/CALL--E-Goals_API-1f6feb?style=flat)
-  ![Tests](https://img.shields.io/badge/tests-210_passing-brightgreen?style=flat)
+  ![Tests](https://img.shields.io/badge/tests-232_passing-brightgreen?style=flat)
   [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
 </div>
@@ -139,7 +139,7 @@ and authored only in CALL-E Chat, so what this repo publishes for the community 
 
 | Metric | Value |
 |---|---|
-| Tests | **210**, passing, no credentials required |
+| Tests | **232**, passing, no credentials required |
 | Contract cases exhaustively verified | **11,520** |
 | Live CALL-E integration tests | **12** — real API reads, skipped loudly without a key |
 | CALL-E error codes routed | **8 of 8** in the published schema |
@@ -193,7 +193,7 @@ it must refuse — with credentials present and `--live` requested.
 ```bash
 git clone <REPO_URL> && cd countercall   # PENDING: repo URL
 npm install
-npm test                                  # 210 tests, no credentials needed
+npm test                                  # 232 tests, no credentials needed
 ```
 
 Then, without placing a call:
@@ -213,7 +213,7 @@ without dialling — run `call.mjs` with the same flags. Add `--live` to actuall
 ```bash
 # ── Code Quality ────────────────────────────
 npm run lint          # eslint
-npm test              # 210 tests
+npm test              # 232 tests
 npm run test:coverage # coverage report
 npm run ci            # lint + test + audit
 
@@ -226,7 +226,7 @@ make security-scan             # npm audit + licenses + gitleaks over full histo
 | Layer | Tool | Status |
 |---|---|---|
 | Code Quality | ESLint (flat config) | ✅ |
-| Unit + Contract Testing | `node:test`, 210 tests | ✅ |
+| Unit + Contract Testing | `node:test`, 232 tests | ✅ |
 | Exhaustive Verification | 11,520 contract cases | ✅ |
 | Safety Boundary | Subprocess refuse-to-dial suite | ✅ |
 | Security (SAST) | CodeQL | ✅ |
@@ -244,7 +244,7 @@ countercall/
 │   ├── references/         # safety rules, result contract, worked examples
 │   └── scripts/            # preflight · call · contract · render · _lib
 ├── scripts/                # verify_calle · bench · bench_stats
-├── test/                   # 210 tests across 8 suites
+├── test/                   # 232 tests across 8 suites
 ├── .github/workflows/      # ci · codeql · gitleaks · release
 ├── JUDGE.md                # the 30-second judge path
 └── README.md               # you are here
@@ -255,7 +255,7 @@ countercall/
 - [x] CALL-E Goals API integration — 4 load-bearing methods
 - [x] Pinned result contract + drift guard
 - [x] Agent Skill package with dry-run-by-default CLI
-- [x] 210 tests · 11,520 exhaustively verified contract cases
+- [x] 232 tests · 11,520 exhaustively verified contract cases
 - [x] 6-stage CI/CD, CodeQL, gitleaks, Dependabot
 - [ ] Publish the Goal in CALL-E Chat and place the first real call
 - [ ] Benchmark ≥ 20 real calls, publish p50/p95 and the honest answer rate

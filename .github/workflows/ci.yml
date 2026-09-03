@@ -41,6 +41,10 @@ jobs:
         if: matrix.node-version == 20
         run: npm run test:coverage
 
+      - name: Documented test count matches the real one
+        if: matrix.node-version == 20
+        run: node scripts/check_counts.mjs
+
   # ── STAGE 2: Security Gate (parallel with Stage 1) ────────
   secret-scan:
     name: "Stage 2 · Secret Scanning"
