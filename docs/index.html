@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CounterCall — know what to bring before you go</title>
+<meta name="description" content="CALL-E phones the government counter, survives the IVR and the hold, and hands back exactly what to bring: documents, fee, cash or card, appointment. And leaves the row empty when the clerk did not know.">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CounterCall">
+<meta property="og:title" content="CounterCall — know what to bring before you go">
+<meta property="og:description" content="CALL-E phones the counter and tells you what to bring. When the clerk does not know, it says so.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- og:image is deliberately omitted. assets/og-image.png currently renders a fabricated
+     call (Rp 650.000, 3m41s). ASSETS.md permits it as branding, but a social card is a
+     judged surface and this project's whole claim is that it does not show values nobody
+     said. Re-export from a real result, drop it at docs/og-image.png, and uncomment:
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630"> -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<style>
+/* ═══ Tokens — mirrors the product's design system ═══════════════════
+   THE DESIGN LAW: amber marks only what a clerk said out loud.
+   Amber is the evidence budget, not the decoration budget.        */
+:root{
+  --bg:#0B0F14; --surface:#141A22; --line:#243040;
+  --primary:#6E8CA8;   /* counter steel — nobody has said this yet */
+  --accent:#F2B33D;    /* ticket amber — a clerk said it, on record */
+  --text:#E8EDF4; --muted:#8494A8; --low:#4A5A6E;
+  --ok:#3DD68C; --stop:#FF6B6B;
+  --ui:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);line-height:1.6;
+     -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+section{padding:88px 0;border-bottom:1px solid var(--line)}
+h1,h2,h3{letter-spacing:-.03em;line-height:1.06;font-weight:800}
+h1{font-size:clamp(38px,7vw,72px)}
+h2{font-size:clamp(28px,4.4vw,44px)}
+h3{font-size:20px;font-weight:600;letter-spacing:-.01em}
+p{color:var(--muted);font-size:clamp(16px,2vw,18px);max-width:62ch}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+        color:var(--low);display:block;margin-bottom:18px}
+.amber{color:var(--accent)} .steel{color:var(--primary)}
+.mono{font-family:var(--mono)}
+
+/* ═══ Nav ═══════════════════════════════════════════════════════════ */
+nav{position:sticky;top:0;z-index:50;background:rgba(11,15,20,.86);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:16px;padding-bottom:16px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:18px}
+.glyph{width:22px;height:22px;flex:none}
+nav .links{display:flex;gap:22px;font-family:var(--mono);font-size:13px;color:var(--muted)}
+nav .links a{text-decoration:none}
+nav .links a:hover{color:var(--accent)}
+@media(max-width:640px){nav .links a.hide-sm{display:none}}
+
+/* ═══ Hero ══════════════════════════════════════════════════════════ */
+.hero{padding:76px 0 64px;position:relative}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(ellipse at 24% 0%,#000 12%,transparent 68%);
+  mask-image:radial-gradient(ellipse at 24% 0%,#000 12%,transparent 68%);opacity:.55}
+.hero p.lead{font-size:clamp(18px,2.4vw,22px);color:var(--text);margin-top:22px;max-width:54ch}
+.axis{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:34px;
+      font-family:var(--mono);font-size:13px;color:var(--muted)}
+.sw{width:84px;height:32px;border-radius:5px;border:1px solid var(--line)}
+.sw-a{background:var(--primary);opacity:.3}
+.sw-b{background:var(--accent)}
+.cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:8px;
+     font-family:var(--mono);font-size:14px;text-decoration:none;border:1px solid var(--line);
+     background:var(--surface);color:var(--text);transition:border-color .16s,transform .16s}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn.primary{background:var(--accent);color:#0B0F14;border-color:var(--accent);font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+
+/* ═══ The card ══════════════════════════════════════════════════════ */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+      padding:26px 28px;box-shadow:0 24px 60px rgba(0,0,0,.45);max-width:560px}
+.card .office{font-size:19px;font-weight:600}
+.card .proc{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:4px}
+.docs{list-style:none;margin:18px 0 8px}
+.docs li{font-size:16px;padding:6px 0 6px 22px;position:relative}
+.docs li::before{content:"";position:absolute;left:3px;top:14px;width:6px;height:6px;
+      border-radius:50%;background:var(--accent)}
+.crow{display:flex;justify-content:space-between;align-items:center;gap:16px;
+      padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}
+.crow:last-of-type{border-bottom:0}
+.crow .k{color:var(--muted);font-size:14px}
+.crow .v{font-weight:600;text-align:right}
+.spoken .v{color:var(--accent)}
+.unsaid .v{color:var(--primary);opacity:.55}
+.unsaid .box{display:inline-block;width:74px;height:13px;border-radius:3px;
+      border:1px dashed var(--primary);opacity:.6;vertical-align:middle}
+.quote{font-family:var(--mono);font-size:13px;color:var(--muted);border-left:2px solid var(--accent);
+      padding-left:14px;margin-top:18px;line-height:1.65}
+.legal{font-size:12px;color:var(--low);margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.await{border:1px dashed var(--line);border-radius:10px;padding:22px 24px;margin-top:18px;
+      font-family:var(--mono);font-size:13px;color:var(--muted);line-height:1.8}
+.await b{color:var(--primary);display:block;margin-bottom:8px;letter-spacing:.06em}
+
+/* ═══ Grids ═════════════════════════════════════════════════════════ */
+.grid{display:grid;gap:26px;margin-top:38px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:1.05fr .95fr;align-items:center;gap:56px}
+@media(max-width:860px){.g3,.g2{grid-template-columns:1fr}}
+.tile{border:1px solid var(--line);border-radius:12px;padding:24px;background:var(--surface)}
+.tile .n{font-family:var(--mono);font-size:12px;color:var(--low);letter-spacing:.16em}
+.tile h3{margin:12px 0 8px}
+.tile p{font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);
+       border-radius:12px;overflow:hidden;margin-top:34px}
+.stats div{padding:22px 20px;border-right:1px solid var(--line)}
+.stats div:last-child{border-right:0}
+.stats .n{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.stats .l{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.45}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}
+  .stats div:nth-child(2){border-right:0}
+  .stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+ul.plain{list-style:none;margin-top:20px}
+ul.plain li{color:var(--muted);font-size:16px;padding:9px 0 9px 26px;position:relative;max-width:62ch}
+ul.plain li::before{content:"→";position:absolute;left:0;color:var(--primary);font-family:var(--mono)}
+footer{padding:54px 0;color:var(--low);font-family:var(--mono);font-size:13px}
+footer .row{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <span class="mark">
+    <svg class="glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2.5" y="2.5" width="19" height="19" rx="4" stroke="#6E8CA8" stroke-width="1.6"/>
+      <path d="M7 9h10M7 13h6" stroke="#F2B33D" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="16.5" cy="16" r="1.6" fill="#F2B33D"/>
+    </svg>
+    CounterCall
+  </span>
+  <span class="links">
+    <a href="#how" class="hide-sm">How</a>
+    <a href="#honesty" class="hide-sm">Why it refuses</a>
+    <a href="#safety">Safety</a>
+    <a href="../JUDGE.md">For judges</a>
+  </span>
+</div></nav>
+
+<!-- ═══ HERO ══════════════════════════════════════════════════════ -->
+<header class="hero"><div class="wrap">
+  <span class="kicker">Jakarta · Indonesia</span>
+  <h1>Know what to bring<br>before you go.</h1>
+  <p class="lead">CALL-E phones the government counter, survives the IVR and the hold, and
+     hands back exactly what to bring — documents, fee, cash or card, appointment.</p>
+  <div class="axis">
+    <span class="sw sw-a"></span><span class="steel">nobody has said this yet</span>
+    <span style="color:var(--low)">→</span>
+    <span class="sw sw-b"></span><span class="amber">a clerk said it, on the record</span>
+  </div>
+  <div class="cta">
+    <a class="btn primary" href="#honesty">See what it refuses to do</a>
+    <a class="btn" href="https://github.com/CALLE-AI/awesome-phone-call-agents">The Agent Skill ↗</a>
+  </div>
+</div></header>
+
+<!-- ═══ THE CARD ══════════════════════════════════════════════════ -->
+<section id="card"><div class="wrap">
+  <span class="kicker">What you get back</span>
+  <div class="grid g2">
+    <div>
+      <h2>One call.<br>Seven typed fields.</h2>
+      <p style="margin-top:20px">Not a transcript to interpret — a validated result a program
+         can act on, with the clerk's verbatim line attached as the evidence for it.</p>
+      <ul class="plain">
+        <li>Documents, in the clerk's own words</li>
+        <li>Fee, payment method, originals or copies</li>
+        <li>Whether you need an appointment first</li>
+        <li>How certain the clerk actually sounded</li>
+      </ul>
+    </div>
+    <div id="card-slot"></div>
+  </div>
+</div></section>
+
+<!-- ═══ HOW ═══════════════════════════════════════════════════════ -->
+<section id="how"><div class="wrap">
+  <span class="kicker">How it works</span>
+  <h2>Two refusals before<br>the phone rings.</h2>
+  <div class="grid g3">
+    <div class="tile"><div class="n">01</div><h3>Check the number</h3>
+      <p>It must be E.164 and carry the URL and date a human read it off the office's own
+         published page. CounterCall never infers a phone number.</p></div>
+    <div class="tile"><div class="n">02</div><h3>Check the contract</h3>
+      <p>It reads the live published Goal schema and compares it to the one this build was
+         pinned against. Any drift refuses the dial — a drifted schema does not throw, it
+         returns confident-looking wrong answers.</p></div>
+    <div class="tile"><div class="n">03</div><h3>Then, and only then, call</h3>
+      <p>One call per office, per procedure, per day, enforced by an idempotency key. The
+         result is validated against the pinned schema before anything is shown.</p></div>
+  </div>
+</div></section>
+
+<!-- ═══ HONESTY ═══════════════════════════════════════════════════ -->
+<section id="honesty"><div class="wrap">
+  <span class="kicker">The one decision</span>
+  <h2>When the clerk doesn't<br>know, it says so.</h2>
+  <p style="margin-top:20px">A checklist that is 70&nbsp;% right is more dangerous than no
+     checklist, because it gets acted on. So a field nobody answered stays
+     <span class="steel">empty and grey</span> — not filled with a typical value, and not
+     quietly dropped so the gap disappears.</p>
+  <p style="margin-top:16px">An unknown fee costs you one question at the window. An invented
+     one costs you the trip.</p>
+  <div class="stats">
+    <div><div class="n">210</div><div class="l">tests, no credentials needed</div></div>
+    <div><div class="n">11,520</div><div class="l">contract cases verified</div></div>
+    <div><div class="n">8 / 8</div><div class="l">CALL-E error codes routed</div></div>
+    <div><div class="n amber">0</div><div class="l">values invented, by construction</div></div>
+  </div>
+</div></section>
+
+<!-- ═══ SAFETY ════════════════════════════════════════════════════ -->
+<section id="safety"><div class="wrap">
+  <span class="kicker">Calling a public counter</span>
+  <h2>The person answering<br>never opted in.</h2>
+  <p style="margin-top:20px">That asymmetry drives every rule here, and it is the part of this
+     project we most want read.</p>
+  <ul class="plain">
+    <li>The call states what it is and asks if now is a good time. "No" ends it, and there is
+        no call back that day.</li>
+    <li>One call per office, per procedure, per day. A retry that mints a fresh key is a bug,
+        not a workaround — these are queues with real people in them.</li>
+    <li>Published general-enquiries lines only, during opening hours. Never a personal mobile,
+        never an emergency or crisis line.</li>
+    <li>No personal data is ever sent as a call variable. The clerk is being asked about a
+        procedure, not about a person.</li>
+  </ul>
+  <div class="cta">
+    <a class="btn" href="https://github.com/CALLE-AI/awesome-phone-call-agents">Read the safety rules ↗</a>
+  </div>
+</div></section>
+
+<!-- ═══ FOR DEVELOPERS ════════════════════════════════════════════ -->
+<section id="build"><div class="wrap">
+  <span class="kicker">For developers</span>
+  <h2>Point it at your city.</h2>
+  <p style="margin-top:20px">Goals are owner-scoped in CALL-E, so what ships is the Goal
+     specification plus the client rather than a shared endpoint. Publish your own copy, add
+     one sourced number, and it is yours.</p>
+  <div class="cta">
+    <a class="btn primary" href="../JUDGE.md">For judges: the 30-second path</a>
+    <a class="btn" href="../README.md">Read the README</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap row">
+  <span>CounterCall · built for the CALL-E Hackathon · v0.0.0-dev</span>
+  <span><a href="../JUDGE.md">Judges</a> · <a href="../README.md">Docs</a> · MIT</span>
+</div></footer>
+
+<!-- ════════════════════════════════════════════════════════════════
+     THE LIVE RESULT.
+
+     This is null because no real call has been placed yet, and the page
+     renders its awaiting state rather than a sample. That is not a
+     placeholder we forgot to fill — it is the product's own claim applied
+     to its own landing page. A site whose thesis is "we never state a
+     value nobody said" cannot invent one to look finished.
+
+     To go live, paste one real Goal Run result here — the exact object
+     from `npm run bench -- --report` or scripts/call.mjs:
+
+       {"office":"Kantor Imigrasi Jakarta Selatan",
+        "procedure":"perpanjangan paspor",
+        "runId":"grun_...",
+        "result":{ ...the validated result... }}
+     ════════════════════════════════════════════════════════════════ -->
+<script id="call-result" type="application/json">null</script>
+
+<script>
+(function(){
+  var PHRASING = {
+    payment_method:{cash:'Cash',card:'Card',both:'Cash or card',unknown:null},
+    appointment_required:{yes:'Yes — book first',no:'No — walk in',unknown:null},
+    originals_or_copies:{originals:'Originals',copies:'Photocopies',
+                         both:'Originals and copies',unknown:null}
+  };
+  var CERTAINTY = {
+    confident:'The clerk answered confidently.',
+    unsure:'The clerk was unsure. Verify these details in person.',
+    refused:'The clerk declined to answer some of this.'
+  };
+
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+
+  /* A value nobody gave renders as a dashed box, never as a substitute. */
+  function row(label, value){
+    if (value === null || value === undefined) {
+      return '<div class="crow unsaid"><span class="k">'+label+
+             '</span><span class="v"><span class="box"></span></span></div>';
+    }
+    return '<div class="crow spoken"><span class="k">'+label+
+           '</span><span class="v">'+esc(value)+'</span></div>';
+  }
+
+  function awaiting(){
+    return '<div class="card">'+
+      '<div class="office">No call has been placed yet.</div>'+
+      '<div class="proc">awaiting the first live Goal Run</div>'+
+      '<div class="await"><b>WHY THIS IS EMPTY</b>'+
+      'This page will not show a sample checklist. Every value it displays has to come '+
+      'from a real clerk on a real call — that is the entire product. Showing an invented '+
+      'one here to look finished would falsify the claim.</div>'+
+      '</div>';
+  }
+
+  function card(d){
+    var r = d.result || {};
+    var fee = (typeof r.total_fee_idr === 'number' && isFinite(r.total_fee_idr))
+      ? 'Rp ' + Math.round(r.total_fee_idr).toLocaleString('id-ID') : null;
+    var docs = String(r.required_documents_text || '').split('\n')
+      .map(function(l){ return l.replace(/^\s*[-*•]\s*/,'').trim(); })
+      .filter(Boolean);
+
+    return '<div class="card">'+
+      '<div class="office">'+esc(d.office||'')+'</div>'+
+      '<div class="proc">'+esc(d.procedure||'')+'</div>'+
+      '<ul class="docs">'+docs.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'+
+      row('Documents', PHRASING.originals_or_copies[r.originals_or_copies]) +
+      row('Fee', fee) +
+      row('Payment', PHRASING.payment_method[r.payment_method]) +
+      row('Appointment', PHRASING.appointment_required[r.appointment_required]) +
+      (r.clerk_quote ? '<div class="quote">"'+esc(r.clerk_quote)+'"</div>' : '') +
+      '<div class="legal">'+esc(CERTAINTY[r.clerk_certainty]||'')+
+      ' A clerk\'s spoken answer is informational, not legally binding.'+
+      (d.runId ? ' · CALL-E run '+esc(d.runId) : '')+'</div>'+
+      '</div>';
+  }
+
+  var raw = document.getElementById('call-result').textContent;
+  var data = null;
+  try { data = JSON.parse(raw); } catch (e) { data = null; }
+  document.getElementById('card-slot').innerHTML =
+    (data && data.result) ? card(data) : awaiting();
+})();
+</script>
+</body>
+</html>
