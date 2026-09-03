@@ -118,9 +118,9 @@ Four Goals API methods are load-bearing:
 | Method | Role | Code |
 |---|---|---|
 | `goals.list` | Discovers the published procedure catalogue — the reuse mechanism itself | `scripts/verify_calle.mjs` |
-| `goals.get` | Reads the live pinned `input_schema` / `result_schema` before every dial | `scripts/preflight.mjs` |
-| `goals.run` | Places the call, with a required business-stable `Idempotency-Key` | `scripts/call.mjs` |
-| `goals.waitForResult` | Polls to a validated result or a terminal `GoalRunError` | `scripts/call.mjs` |
+| `goals.get` | Reads the live pinned `input_schema` / `result_schema` before every dial | `skills/countercall/scripts/preflight.mjs` |
+| `goals.run` | Places the call, with a required business-stable `Idempotency-Key` | `skills/countercall/scripts/call.mjs` |
+| `goals.waitForResult` | Polls to a validated result or a terminal `GoalRunError` | `skills/countercall/scripts/call.mjs` |
 
 Plus two protocol surfaces doing real work rather than decorating: the pinned `result_schema`
 with `additionalProperties: false` — which turns a malformed answer into a *detectable*
