@@ -5,16 +5,12 @@
  *
  *   node scripts/preflight.mjs --office imigrasi-jaksel --procedure "perpanjangan paspor"
  */
-import { readFileSync } from 'node:fs';
-import { validateOffice, diffContract, idempotencyKey, parseArgs } from './_lib.mjs';
+import {
+  validateOffice, diffContract, idempotencyKey, parseArgs, publishedRunSpec, loadOffices,
+} from './_lib.mjs';
+import { CONTRACT, contractFields } from './contract.mjs';
 
-const PINNED = {
-  version: 1,
-  result_fields: [
-    'required_documents', 'total_fee_idr', 'payment_method',
-    'appointment_required', 'originals_or_copies', 'clerk_certainty', 'clerk_quote',
-  ],
-};
+const PINNED = { version: CONTRACT.version, result_fields: contractFields() };
 
 const args = parseArgs(process.argv.slice(2));
 if (!args.office || !args.procedure) {
@@ -22,7 +18,7 @@ if (!args.office || !args.procedure) {
   process.exit(2);
 }
 
-const offices = JSON.parse(readFileSync(new URL('../data/offices.json', import.meta.url), 'utf8'));
+const offices = loadOffices(args, import.meta.url);
 const office = offices.find((o) => o.id === args.office);
 const problems = validateOffice(office);
 
@@ -47,7 +43,7 @@ if (process.env.CALLE_API_KEY && process.env.COUNTERCALL_GOAL_ID) {
   const { CalleClient } = await import('@call-e/calle');
   const client = new CalleClient({ apiKey: process.env.CALLE_API_KEY });
   const goal = await client.goals.get(process.env.COUNTERCALL_GOAL_ID);
-  const drift = diffContract(PINNED, goal.published_run_spec);
+  const drift = diffContract(PINNED, publishedRunSpec(goal));
   if (drift.length) {
     console.log('  contract           DRIFT DETECTED');
     for (const d of drift) console.log(`                     - ${d}`);

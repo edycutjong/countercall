@@ -8,8 +8,9 @@
  *   node scripts/call.mjs --office imigrasi-jaksel --procedure "perpanjangan paspor"
  *   node scripts/call.mjs --office imigrasi-jaksel --procedure "perpanjangan paspor" --live
  */
-import { readFileSync } from 'node:fs';
-import { validateOffice, idempotencyKey, parseArgs } from './_lib.mjs';
+import { validateOffice, idempotencyKey, parseArgs, loadOffices } from './_lib.mjs';
+import { validateResult } from './contract.mjs';
+import { renderCard, renderFailure } from './render.mjs';
 
 const args = parseArgs(process.argv.slice(2));
 if (!args.office || !args.procedure) {
@@ -17,7 +18,7 @@ if (!args.office || !args.procedure) {
   process.exit(2);
 }
 
-const offices = JSON.parse(readFileSync(new URL('../data/offices.json', import.meta.url), 'utf8'));
+const offices = loadOffices(args, import.meta.url);
 const office = offices.find((o) => o.id === args.office);
 const problems = validateOffice(office);
 if (problems.length) {
@@ -26,9 +27,13 @@ if (problems.length) {
 }
 
 const today = new Date(Date.now()).toISOString().slice(0, 10);
+
+// Exactly the object the SDK takes: `phone` at the top level, no target wrapper.
+// CreateGoalRunRequest is a closed object — region, locale and display name live on the
+// published Goal and are rejected per run.
 const request = {
   goalId: process.env.COUNTERCALL_GOAL_ID ?? '<COUNTERCALL_GOAL_ID>',
-  target: office.phone_e164,
+  phone: office.phone_e164,
   variables: {
     office_name: office.name,
     procedure: args.procedure,
@@ -62,31 +67,36 @@ const client = new CalleClient({ apiKey: process.env.CALLE_API_KEY });
 console.log(`Dialling ${office.phone_e164} ...`);
 const started = Date.now();
 try {
-  const run = await client.goals.run(request.goalId, {
-    target: request.target,
-    variables: request.variables,
-    idempotencyKey: request.idempotencyKey,
-  });
-  const outcome = await client.goals.waitForResult(request.goalId, run.id ?? run.runId);
-  const seconds = ((Date.now() - started) / 1000).toFixed(1);
+  const run = await client.goals.run(request);
 
+  // Poll on GoalRun.id. The nested runSpec/telephone `runId` is a different identity and
+  // substituting it returns 404.
+  const outcome = await client.goals.waitForResult(request.goalId, run.id);
+  const seconds = ((Date.now() - started) / 1000).toFixed(1);
+  const meta = { procedure: args.procedure, runId: run.id, calledAt: run.createdAt };
+
+  // `result` and `error` are mutually exclusive and either one is terminal.
   if (outcome.error) {
-    // Error codes are control flow here, not a catch-all.
-    const code = outcome.error.code ?? 'unknown';
-    const said = {
-      no_answer: 'The line did not answer. No checklist is available for this office today.',
-      declined: 'The office declined to answer an automated caller.',
-      result_invalid: 'The call completed but the answer did not match the contract. Nothing is shown.',
-      timed_out: 'No usable answer was obtained.',
-    }[code] ?? `Unrouted error code: ${code}`;
-    console.log(`${code} after ${seconds}s`);
-    console.log(said);
-    console.log('No partial checklist is ever rendered.');
+    console.log(renderFailure(outcome.error.code ?? 'unknown', office, meta));
+    console.log('');
+    console.log(`Failed after ${seconds}s.`);
     process.exit(5);
   }
 
-  console.log(`Result in ${seconds}s`);
-  console.log(JSON.stringify(outcome.result, null, 2));
+  // The server validated against the published schema; we re-validate against the schema
+  // this build was PINNED to. Those are different claims, and only the second one keeps a
+  // drifted Goal from rendering a confident wrong card.
+  const problems = validateResult(outcome.result);
+  if (problems.length) {
+    console.log(renderFailure('result_invalid', office, meta));
+    console.log('');
+    for (const problem of problems) console.log(`  - ${problem}`);
+    process.exit(5);
+  }
+
+  console.log(renderCard(outcome.result, office, meta));
+  console.log('');
+  console.log(`Answered in ${seconds}s.`);
 } catch (error) {
   console.error(`${error?.constructor?.name ?? 'Error'}: ${error?.message ?? error}`);
   process.exit(1);

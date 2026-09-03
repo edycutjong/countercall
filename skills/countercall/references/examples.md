@@ -23,7 +23,7 @@ Result:
 
 ```json
 {
-  "required_documents": ["KTP asli", "Kartu Keluarga asli", "paspor lama"],
+  "required_documents_text": "KTP asli\nKartu Keluarga asli\npaspor lama",
   "total_fee_idr": 650000,
   "payment_method": "cash",
   "appointment_required": "yes",
@@ -41,8 +41,7 @@ not say an appointment must be booked first. Both are trips lost.
 
 ```json
 {
-  "required_documents": ["KTP asli", "Kartu Keluarga asli", "paspor lama"],
-  "total_fee_idr": null,
+  "required_documents_text": "KTP asli\nKartu Keluarga asli\npaspor lama",
   "payment_method": "unknown",
   "appointment_required": "yes",
   "originals_or_copies": "originals",
@@ -51,7 +50,8 @@ not say an appointment must be booked first. Both are trips lost.
 }
 ```
 
-The fee row renders **empty and grey**, and the card is labelled unsure. It does not fall
+The fee field is **absent entirely** — not `null`, which a Goal Run result cannot carry.
+The card still renders the Fee row, as an em dash, and is labelled unsure. It does not fall
 back to a typical fee, and it does not drop the row so the gap disappears.
 
 This is a **successful** call. The user learns three documents and an appointment
@@ -90,7 +90,7 @@ consistently, remove it from the seed file. A refusal is an answer.
 ## 5. `result_invalid` — the call happened, the shape was wrong
 
 ```json
-{ "error": { "code": "result_invalid", "reason": "required_documents was a string, expected array" } }
+{ "error": { "code": "result_invalid", "reason": "required_documents_text decoded to zero documents" } }
 ```
 
 Rendered:
