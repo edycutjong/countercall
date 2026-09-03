@@ -52,6 +52,11 @@ const CLAIMS = [
   /(\d{3,4})\s*(?:<[^>]+>\s*)*tests?\b/gi,          // "232 tests", "<b>232</b> tests"
   /tests?[-_\s]*(\d{3,4})[-_\s]*passing/gi,          // shields.io badge
   /\|\s*Tests\s*\|\s*\*\*(\d{3,4})\*\*/gi,        // "| Tests | **232**"
+  // The runner prints the count AFTER the word, and pasted transcripts carry it.
+  // The forward-only patterns above reported "every surface agrees" while a
+  // transcript in DEMO.md still said 232 — a false negative is worse than a noisy
+  // check, because it is silent.
+  /^#\s*(?:tests|pass)\s+(\d{3,4})\s*$/gim,
 ];
 
 const findings = [];

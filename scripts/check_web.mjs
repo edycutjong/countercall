@@ -27,6 +27,7 @@ const REQUIRED_FILES = [
   'index.html', 'pitch/index.html', '404.html',
   'icon.svg', 'icon-512.png', 'apple-touch-icon.png', 'og-image.png',
   'site.webmanifest', 'robots.txt', 'sitemap.xml',
+  'CNAME',   // drops the custom domain on deploy if it goes missing
 ];
 
 function htmlFiles(dir) {
@@ -64,9 +65,10 @@ for (const file of pages) {
   const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
   for (const ref of refs) {
     if (/^(https?:|mailto:|data:|#|\/\/)/.test(ref)) continue;
-    // Root-absolute paths are resolved by Pages against the site root, which is web/.
+    // The site is served from the root of its custom domain, so a root-absolute
+    // path maps straight onto web/ with no project-path prefix to strip.
     const target = ref.startsWith('/')
-      ? join(WEB, ref.replace(/^\/[^/]+\//, ''))   // strip the project-site prefix
+      ? join(WEB, ref.slice(1))
       : resolve(dirname(file), ref);
     const candidates = [target, join(target, 'index.html')];
     if (!candidates.some(existsSync)) fail(file, `dead local reference: ${ref}`);
@@ -119,7 +121,30 @@ for (const file of pages) {
   }
 }
 
-// ── 8. the deck labels its illustrative values ───────────────────────────────
+// ── 8. the custom domain is consistent everywhere it is asserted ─────────────
+{
+  const cname = readFileSync(join(WEB, 'CNAME'), 'utf8').trim();
+  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(cname)) {
+    fail(join(WEB, 'CNAME'), `not a bare hostname: ${JSON.stringify(cname)}`);
+  }
+  const origin = `https://${cname}`;
+  for (const rel of ['index.html', 'sitemap.xml', 'robots.txt']) {
+    const src = readFileSync(join(WEB, rel), 'utf8');
+    const urls = [...src.matchAll(/https:\/\/([a-z0-9.-]+\.[a-z]{2,})\//g)].map((m) => m[1]);
+    for (const host of new Set(urls)) {
+      // Third-party hosts are fine; a DIFFERENT first-party host means the domain
+      // was changed in one place and not the others.
+      if (/github\.io$/.test(host) && host !== cname) {
+        fail(join(WEB, rel), `still points at ${host}, but CNAME says ${cname}`);
+      }
+    }
+  }
+  if (!readFileSync(join(WEB, 'index.html'), 'utf8').includes(origin)) {
+    fail(join(WEB, 'index.html'), `canonical/og URLs do not use ${origin}`);
+  }
+}
+
+// ── 9. the deck labels its illustrative values ───────────────────────────────
 {
   const deck = readFileSync(join(WEB, 'pitch', 'index.html'), 'utf8');
   if (/Kartu Keluarga asli/.test(deck) && !/not a call recording/i.test(deck)) {

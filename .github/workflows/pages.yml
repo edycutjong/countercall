@@ -1,11 +1,16 @@
 name: Deploy web to GitHub Pages
 
-# Serves web/ at https://<owner>.github.io/<repo>/
+# Serves web/ at https://countercall.edycu.dev (custom domain, see web/CNAME)
 #   /            landing page
 #   /pitch/      pitch deck
 #   /404.html    served for any unmatched path
 #
-# Requires Settings -> Pages -> Source: "GitHub Actions" (once, by hand).
+# Requires Settings -> Pages -> Source: "GitHub Actions" (once, by hand), plus a DNS
+# CNAME record for the host in web/CNAME pointing at <owner>.github.io.
+#
+# web/CNAME travels inside the uploaded artifact on purpose. GitHub reads it on every
+# deploy; if it is missing the custom domain is silently reset and the site starts
+# answering on github.io instead.
 # Nothing else about the repo needs to change: web/ is plain static HTML with no
 # build step, so there is no bundler to break on deploy day.
 
@@ -43,7 +48,7 @@ jobs:
           set -e
           for f in web/index.html web/pitch/index.html web/404.html \
                    web/icon.svg web/og-image.png web/site.webmanifest \
-                   web/robots.txt web/sitemap.xml; do
+                   web/robots.txt web/sitemap.xml web/CNAME; do
             test -f "$f" || { echo "::error::missing $f"; exit 1; }
           done
           echo "✅ all site files present"

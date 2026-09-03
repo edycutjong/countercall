@@ -140,6 +140,13 @@ describe('every published page is free of fabricated call data', () => {
 
   test('404 uses root-absolute asset paths, which is what Pages needs', () => {
     // A relative path here resolves against the missing URL's directory and breaks.
-    assert.match(NOTFOUND, /href="\/countercall\/icon\.svg"/);
+    // Served from a custom-domain root, so no project-path prefix.
+    assert.match(NOTFOUND, /href="\/icon\.svg"/);
+    assert.ok(!/\/countercall\//.test(NOTFOUND), 'stale project-path prefix');
+  });
+
+  test('a CNAME ships with the site, or the custom domain is dropped on deploy', () => {
+    const cname = read('../web/CNAME').trim();
+    assert.match(cname, /^[a-z0-9.-]+\.[a-z]{2,}$/);
   });
 });
