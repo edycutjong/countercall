@@ -7,13 +7,21 @@
   "license": "MIT",
   "scripts": {
     "verify": "node scripts/verify_calle.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "node --test \"test/**/*.test.mjs\"",
-    "bench": "node scripts/bench.mjs"
+    "test:coverage": "node --experimental-test-coverage --test \"test/**/*.test.mjs\"",
+    "audit": "npm audit --audit-level=high",
+    "bench": "node scripts/bench.mjs",
+    "ci": "npm run lint && npm run test && npm run audit"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@call-e/calle": "^0.7.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5"
   }
 }

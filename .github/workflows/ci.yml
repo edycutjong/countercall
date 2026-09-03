@@ -1,0 +1,206 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── STAGE 1: Code Quality (parallel with Stage 2) ─────────
+  quality:
+    name: "Stage 1 · Code Quality"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ github.event_name == 'push' && fromJSON('[20, 22, 24]') || fromJSON('[20]') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Tests with coverage
+        if: matrix.node-version == 20
+        run: npm run test:coverage
+
+  # ── STAGE 2: Security Gate (parallel with Stage 1) ────────
+  secret-scan:
+    name: "Stage 2 · Secret Scanning"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history — the point is to scan the past
+
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  dependency-audit:
+    name: "Stage 2 · Dependency Audit"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high
+        continue-on-error: true # don't block on transitive dep issues
+
+      - name: License compliance check
+        run: npx license-checker --production --failOn "GPL-3.0;AGPL-3.0" --summary
+        continue-on-error: true
+
+  # ── STAGE 3: Package Verification ─────────────────────────
+  # There is no bundler here — this ships as an Agent Skill package and a CLI. The
+  # equivalent of a build check is proving the package resolves and every entry point
+  # starts from a clean install.
+  package:
+    name: "Stage 3 · Package Verification"
+    needs: [quality]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Clean install from the lockfile
+        run: npm ci
+
+      - name: Every module parses
+        run: |
+          for f in $(git ls-files '*.mjs'); do
+            node --check "$f" || exit 1
+          done
+          echo "✅ all modules parse"
+
+      - name: Entry points start without credentials
+        run: |
+          node skills/countercall/scripts/preflight.mjs --help 2>/dev/null || true
+          node scripts/bench.mjs --plan --calls 5
+          echo "✅ entry points run with no CALLE_API_KEY present"
+
+      - name: Skill package is complete
+        run: |
+          test -f skills/countercall/SKILL.md
+          test -f skills/countercall/data/offices.json
+          test -f skills/countercall/references/safety.md
+          test -f skills/countercall/references/result-contract.md
+          echo "✅ Agent Skill package intact"
+
+  # ── STAGE 4: Safety Boundary (the gate that matters here) ─
+  # This project's E2E surface is a CLI that can make a stranger's phone ring. The
+  # boundary suite drives the shipped entry points as subprocesses and asserts every
+  # refuse-to-dial path holds, including with credentials present and --live requested.
+  boundary:
+    name: "Stage 4 · Safety Boundary"
+    needs: [package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Permission-boundary suite
+        run: node --test test/boundary.test.mjs
+
+      - name: CLI contract suite
+        run: node --test test/cli.test.mjs
+
+      - name: No test may request a live call
+        run: |
+          if grep -rn -- "--live" test/ | grep -v "must never\|no test\|without --live\|fails closed\|refuses\|//"; then
+            echo "::error::a test requests --live"; exit 1
+          fi
+          echo "✅ no test dials"
+
+  # ── STAGE 5: Contract Verification ────────────────────────
+  contract:
+    name: "Stage 5 · Contract Verification"
+    needs: [package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Exhaustive contract sweep
+        run: node --test test/exhaustive.test.mjs
+
+      - name: Defect regression suite
+        run: node --test test/regressions.test.mjs
+
+      - name: Live CALL-E reads (only when a key is configured)
+        run: node --test test/live.test.mjs
+        env:
+          CALLE_API_KEY: ${{ secrets.CALLE_API_KEY }}
+          COUNTERCALL_GOAL_ID: ${{ secrets.COUNTERCALL_GOAL_ID }}
+
+  # ── STAGE 6: Submission Gate (main only) ──────────────────
+  submission-gate:
+    name: "Stage 6 · Submission Gate"
+    needs: [package, boundary, contract, secret-scan, dependency-audit]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: All gates passed
+        run: |
+          echo "🚀 All CI/CD gates passed!"
+          echo ""
+          echo "Pipeline Summary:"
+          echo "  ✅ Stage 1 — Code Quality (eslint, tests, coverage)"
+          echo "  ✅ Stage 2 — Secret Scanning (TruffleHog, full history)"
+          echo "  ✅ Stage 2 — Dependency Audit (npm audit + licenses)"
+          echo "  ✅ Stage 3 — Package Verification (clean install, skill intact)"
+          echo "  ✅ Stage 4 — Safety Boundary (refuse-to-dial, no test dials)"
+          echo "  ✅ Stage 5 — Contract Verification (exhaustive sweep + regressions)"

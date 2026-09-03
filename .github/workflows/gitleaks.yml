@@ -1,0 +1,22 @@
+name: gitleaks
+
+# GitHub's own secret scanning only matches known provider patterns on pushed commits.
+# gitleaks catches project-shaped secrets (CALLE_API_KEY) and scans HISTORY, which is what
+# matters at the private -> public flip this repo will go through at submission.
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # full history — the point is to scan the past
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

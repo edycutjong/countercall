@@ -107,8 +107,14 @@ export function validateResult(result) {
     }
   }
 
-  if ('clerk_quote' in result && typeof result.clerk_quote !== 'string') {
-    problems.push('clerk_quote is not a string');
+  if ('clerk_quote' in result) {
+    if (typeof result.clerk_quote !== 'string') {
+      problems.push('clerk_quote is not a string');
+    } else if (result.clerk_quote.trim().length === 0) {
+      // The quote is span grounding — it is the evidence for every other field. An empty
+      // one renders a card that looks sourced and is not.
+      problems.push('clerk_quote is empty');
+    }
   }
 
   if ('total_fee_idr' in result) {
