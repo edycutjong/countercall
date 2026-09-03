@@ -1,0 +1,92 @@
+name: Deploy web to GitHub Pages
+
+# Serves web/ at https://<owner>.github.io/<repo>/
+#   /            landing page
+#   /pitch/      pitch deck
+#   /404.html    served for any unmatched path
+#
+# Requires Settings -> Pages -> Source: "GitHub Actions" (once, by hand).
+# Nothing else about the repo needs to change: web/ is plain static HTML with no
+# build step, so there is no bundler to break on deploy day.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; never cancel a running one mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify the site before publishing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Every page exists
+        run: |
+          set -e
+          for f in web/index.html web/pitch/index.html web/404.html \
+                   web/icon.svg web/og-image.png web/site.webmanifest \
+                   web/robots.txt web/sitemap.xml; do
+            test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          done
+          echo "✅ all site files present"
+
+      - name: No fabricated call data on a judged surface
+        run: |
+          # The blocked mockups render Rp 650.000 / 3m41s. Neither may reach the
+          # published site. Comments are stripped first: the pages explain the rule
+          # by naming the figures, and an explanation is not a render.
+          fail=0
+          for f in web/index.html web/pitch/index.html web/404.html; do
+            stripped=$(perl -0777 -pe 's/<!--.*?-->//gs' "$f")
+            if printf '%s' "$stripped" | grep -qE 'Rp ?[0-9]|[0-9]+m[0-9]+s'; then
+              echo "::error file=$f::renders a fabricated call figure"; fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Illustrative call values are labelled
+        run: |
+          # Slide 7 shows values from references/examples.md, which are explicitly
+          # not recordings. It may do so only while it says so in frame.
+          if grep -q 'Kartu Keluarga asli' web/pitch/index.html; then
+            grep -q 'not a call recording' web/pitch/index.html || {
+              echo "::error::deck shows illustrative call values with no label"; exit 1; }
+          fi
+          echo "✅ illustrative values labelled"
+
+      - name: HTML parses and internal links resolve
+        run: node scripts/check_web.mjs
+
+  deploy:
+    name: Deploy
+    needs: [verify]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4

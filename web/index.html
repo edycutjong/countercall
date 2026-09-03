@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CounterCall — know what to bring before you go</title>
+<meta name="description" content="CALL-E phones the Indonesian government counter, survives the IVR and the hold, and hands back what to bring: documents, fee, cash or card, appointment. When the clerk doesn't know, it says so.">
+<meta name="theme-color" content="#0B0F14">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://edycutjong.github.io/countercall/">
+
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CounterCall">
+<meta property="og:url" content="https://edycutjong.github.io/countercall/">
+<meta property="og:title" content="CounterCall — know what to bring before you go">
+<meta property="og:description" content="CALL-E phones the counter and tells you what to bring. When the clerk doesn't know, it says so.">
+<meta property="og:image" content="https://edycutjong.github.io/countercall/og-image.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="CounterCall — know what to bring before you go. A steel swatch labelled 'nobody has said this yet' beside an amber swatch labelled 'a clerk said it'.">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CounterCall — know what to bring before you go">
+<meta name="twitter:description" content="CALL-E phones the counter and tells you what to bring. When the clerk doesn't know, it says so.">
+<meta name="twitter:image" content="https://edycutjong.github.io/countercall/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<script>document.documentElement.className+=" js";</script>
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   THE DESIGN LAW (assets/_tokens.css): amber marks only what a clerk
+   said out loud. Amber is the evidence budget, not the decoration
+   budget. Steel is the state where nobody has answered yet. Those two
+   are the ends of one axis, and nothing else on this page is amber.
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0B0F14; --surface:#141A22; --surface-2:#18202A; --line:#243040;
+  --primary:#6E8CA8; --accent:#F2B33D;
+  --text:#E8EDF4; --muted:#8494A8; --low:#4A5A6E;
+  --ok:#3DD68C; --stop:#FF6B6B;
+  --ui:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --pad:clamp(20px,5vw,28px);
+  --maxw:1120px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);line-height:1.62;
+     -webkit-font-smoothing:antialiased;overflow-x:hidden}
+img,svg{max-width:100%;height:auto}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#0B0F14;
+      padding:10px 18px;border-radius:0 0 8px 0;font-weight:700;z-index:200}
+.skip:focus{left:0}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
+section{padding:clamp(64px,9vw,104px) 0;border-bottom:1px solid var(--line);position:relative}
+h1,h2,h3{letter-spacing:-.032em;line-height:1.05;font-weight:800}
+h1{font-size:clamp(34px,5.1vw,58px);letter-spacing:-.042em;text-wrap:balance}
+h2{font-size:clamp(27px,4.2vw,44px)}
+h3{font-size:19px;font-weight:600;letter-spacing:-.012em;line-height:1.35}
+p{color:var(--muted);font-size:clamp(16px,1.5vw,18px);max-width:60ch}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+        color:var(--low);display:block;margin-bottom:16px}
+.amber{color:var(--accent)} .steel{color:var(--primary)} .mono{font-family:var(--mono)}
+
+/* ── Nav ─────────────────────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:100;background:rgba(11,15,20,.82);
+    backdrop-filter:saturate(150%) blur(14px);-webkit-backdrop-filter:saturate(150%) blur(14px);
+    border-bottom:1px solid transparent;transition:border-color .25s}
+nav.stuck{border-bottom-color:var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;
+          padding-top:14px;padding-bottom:14px;gap:16px}
+.mark{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.025em;
+      font-size:17px;text-decoration:none;flex:none;min-height:36px}
+.mark img{width:26px;height:26px;border-radius:7px}
+nav .links{display:flex;gap:clamp(14px,2.4vw,24px);font-family:var(--mono);font-size:13px;
+           color:var(--muted);align-items:center}
+nav .links a{text-decoration:none;transition:color .16s;white-space:nowrap;
+             display:inline-flex;align-items:center;min-height:36px;padding:0 2px}
+nav .links a:hover{color:var(--accent)}
+@media(max-width:720px){nav .links a.hide-sm{display:none}}
+
+/* ── Hero ────────────────────────────────────────────────────────── */
+.hero{position:relative;padding-top:clamp(52px,8vw,84px);
+      padding-bottom:clamp(56px,8vw,92px);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.18fr .82fr;
+           gap:clamp(32px,5vw,60px);align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:40px}}
+.hero::before{content:"";position:absolute;inset:-10% -20% auto -20%;height:120%;
+  pointer-events:none;z-index:0;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse 60% 55% at 22% 8%,#000 4%,transparent 70%);
+          mask-image:radial-gradient(ellipse 60% 55% at 22% 8%,#000 4%,transparent 70%);
+  opacity:.5}
+.hero>.wrap{position:relative;z-index:1}
+.hero .lead{font-size:clamp(17px,2vw,21px);color:var(--text);margin-top:20px;max-width:46ch;
+            font-weight:400;opacity:.92}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:9px;
+     font-family:var(--mono);font-size:13.5px;text-decoration:none;border:1px solid var(--line);
+     background:var(--surface);color:var(--text);
+     transition:border-color .18s,transform .18s,background .18s}
+.btn:hover{border-color:var(--primary);transform:translateY(-2px);background:var(--surface-2)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:var(--accent);color:#0B0F14;border-color:var(--accent);font-weight:700}
+.btn.primary:hover{filter:brightness(1.09);border-color:var(--accent)}
+.trust{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:26px;font-family:var(--mono);
+       font-size:12.5px;color:var(--low)}
+.trust b{color:var(--muted);font-weight:400}
+
+/* ── The mechanism card (hero) ───────────────────────────────────── */
+.card{background:linear-gradient(180deg,var(--surface-2),var(--surface));
+      border:1px solid var(--line);border-radius:16px;padding:24px 26px;
+      box-shadow:0 30px 70px -20px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.02) inset}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:14px;
+           padding-bottom:16px;border-bottom:1px solid var(--line)}
+.card-head .t{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card-head .s{font-family:var(--mono);font-size:11px;color:var(--low);
+              border:1px solid var(--line);border-radius:100px;padding:4px 10px;white-space:nowrap}
+.crow{display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding:13px 0;border-bottom:1px solid var(--line)}
+.crow:last-child{border-bottom:0;padding-bottom:2px}
+.crow .k{color:var(--muted);font-size:14px;flex:none}
+/* A value that arrived renders as an amber bar; one that never did stays a
+   dashed steel outline. No text either way — this shows the MECHANISM, and
+   inventing a document name here would be the exact thing the product refuses. */
+.bar{height:14px;border-radius:4px;width:0;transition:width .5s cubic-bezier(.2,.8,.2,1);
+     background:var(--accent);opacity:.85}
+.crow.filled .bar{width:var(--w,120px)}
+.crow.empty .bar{width:var(--w,92px);background:none;opacity:.55;
+                 border:1px dashed var(--primary)}
+.crow .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+           text-transform:uppercase;color:var(--low);opacity:0;transition:opacity .4s .2s}
+.crow.done .tag{opacity:1}
+.crow.empty .tag{color:var(--primary)}
+.quote{font-family:var(--mono);font-size:12.5px;color:var(--muted);line-height:1.7;
+       border-left:2px solid var(--accent);padding-left:14px;margin-top:16px}
+.card-foot{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);
+           font-family:var(--mono);font-size:11.5px;color:var(--low);line-height:1.7}
+.replay{margin-top:14px;background:none;border:1px solid var(--line);color:var(--muted);
+        font-family:var(--mono);font-size:11.5px;padding:0 16px;min-height:36px;
+        border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;
+        transition:border-color .18s,color .18s}
+.replay:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Reveal on scroll ────────────────────────────────────────────── */
+.rv{opacity:1}
+html.js .rv{opacity:0;transform:translateY(14px);
+            transition:opacity .55s ease,transform .55s ease}
+html.js .rv.in{opacity:1;transform:none}
+@media print{.rv{opacity:1!important;transform:none!important}}
+
+/* ── Layout blocks ───────────────────────────────────────────────── */
+.grid{display:grid;gap:22px;margin-top:36px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:1.04fr .96fr;gap:clamp(32px,5vw,58px);align-items:center}
+@media(max-width:880px){.g3,.g2{grid-template-columns:1fr}}
+.tile{border:1px solid var(--line);border-radius:14px;padding:24px;background:var(--surface);
+      transition:border-color .2s,transform .2s}
+.tile:hover{border-color:var(--primary);transform:translateY(-2px)}
+.tile .n{font-family:var(--mono);font-size:11.5px;color:var(--low);letter-spacing:.18em}
+.tile h3{margin:12px 0 9px}
+.tile p{font-size:15px;line-height:1.6}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);
+       border-radius:14px;overflow:hidden;margin-top:34px;background:var(--surface)}
+.stats > div{padding:22px 20px;border-right:1px solid var(--line)}
+.stats > div:last-child{border-right:0}
+.stats .n{font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.025em;
+          font-variant-numeric:tabular-nums}
+.stats .l{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+@media(max-width:760px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stats > div:nth-child(2){border-right:0}
+  .stats > div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+
+ul.plain{list-style:none;margin-top:22px}
+ul.plain li{color:var(--muted);font-size:clamp(15px,1.5vw,16.5px);padding:10px 0 10px 28px;
+            position:relative;max-width:62ch;line-height:1.62}
+ul.plain li::before{content:"→";position:absolute;left:0;top:10px;color:var(--primary);
+                    font-family:var(--mono);font-size:14px}
+
+.axis{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:28px;
+      font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.sw{width:72px;height:28px;border-radius:6px;border:1px solid var(--line);flex:none}
+.sw-a{background:var(--primary);opacity:.3}
+.sw-b{background:var(--accent)}
+
+footer{padding:44px 0 56px;color:var(--low);font-family:var(--mono);font-size:12.5px}
+footer .row{display:flex;flex-wrap:wrap;gap:14px 24px;justify-content:space-between}
+footer a{color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;
+         min-height:36px;padding:0 2px}
+footer a:hover{color:var(--accent)}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+                       transition-duration:.001ms!important;scroll-behavior:auto!important}
+  html.js .rv{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<nav id="nav"><div class="wrap">
+  <a class="mark" href="#top"><img src="icon.svg" alt="" width="26" height="26">CounterCall</a>
+  <span class="links">
+    <a href="#how" class="hide-sm">How</a>
+    <a href="#honesty" class="hide-sm">Why it refuses</a>
+    <a href="#safety">Safety</a>
+    <a href="pitch/">Pitch</a>
+    <a href="https://github.com/edycutjong/countercall">GitHub</a>
+  </span>
+</div></nav>
+
+<!-- ═══ HERO ═════════════════════════════════════════════════════ -->
+<header class="hero" id="top"><div class="wrap">
+  <div class="hero-grid">
+    <div>
+      <span class="kicker">Jakarta · Indonesia</span>
+      <h1>Know what to bring<br>before you go.</h1>
+      <p class="lead">CALL-E phones the government counter, survives the IVR and the hold, and
+        hands back exactly what to bring — documents, fee, cash or card, appointment.</p>
+      <div class="cta">
+        <a class="btn primary" href="#honesty">See what it refuses to do</a>
+        <a class="btn" href="pitch/">The 3-minute pitch →</a>
+      </div>
+      <div class="trust">
+        <span><b>210</b> tests</span>
+        <span><b>11,520</b> contract cases verified</span>
+        <span><b>0</b> values invented</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" id="mech">
+        <div class="card-head">
+          <span class="t">How a checklist fills</span>
+          <span class="s">mechanism · not a call</span>
+        </div>
+        <div class="crow" data-fill="150"><span class="k">Documents</span>
+          <span class="bar"></span><span class="tag">spoken</span></div>
+        <div class="crow" data-fill="118"><span class="k">Appointment</span>
+          <span class="bar"></span><span class="tag">spoken</span></div>
+        <div class="crow" data-fill="96"><span class="k">Payment</span>
+          <span class="bar"></span><span class="tag">spoken</span></div>
+        <div class="crow" data-empty="1"><span class="k">Fee</span>
+          <span class="bar"></span><span class="tag">not said</span></div>
+        <div class="card-foot">
+          Each row fills only when a clerk answers it. The one nobody answered
+          stays empty — never a typical value, never quietly dropped.
+        </div>
+        <button class="replay" id="replay" type="button">↻ Replay</button>
+      </div>
+    </div>
+  </div>
+</div></header>
+
+<main id="main">
+
+<!-- ═══ WHAT YOU GET ═════════════════════════════════════════════ -->
+<section id="result"><div class="wrap">
+  <div class="grid g2">
+    <div class="rv">
+      <span class="kicker">What comes back</span>
+      <h2>One call.<br>Seven typed fields.</h2>
+      <p style="margin-top:18px">Not a transcript you have to interpret — a validated result a
+        program can act on, with the clerk's verbatim line attached as the evidence for it.</p>
+      <ul class="plain">
+        <li>The documents, in the clerk's own words</li>
+        <li>Fee, payment method, originals or photocopies</li>
+        <li>Whether you need an appointment first</li>
+        <li>How certain the clerk actually sounded</li>
+      </ul>
+    </div>
+    <div class="rv" id="card-slot"></div>
+  </div>
+</div></section>
+
+<!-- ═══ HOW ══════════════════════════════════════════════════════ -->
+<section id="how"><div class="wrap">
+  <div class="rv">
+    <span class="kicker">How it works</span>
+    <h2>Two refusals before<br>the phone rings.</h2>
+  </div>
+  <div class="grid g3">
+    <div class="tile rv"><div class="n">01</div><h3>Check the number</h3>
+      <p>It must be E.164 and carry the URL and date a human read it off the office's own
+        published page. CounterCall never infers a phone number.</p></div>
+    <div class="tile rv"><div class="n">02</div><h3>Check the contract</h3>
+      <p>It reads the live published Goal schema and compares it to the one this build pinned.
+        Any drift refuses the dial — a drifted schema doesn't throw, it returns
+        confident-looking wrong answers.</p></div>
+    <div class="tile rv"><div class="n">03</div><h3>Then, and only then, call</h3>
+      <p>One call per office, per procedure, per day, enforced by an idempotency key. The
+        result is validated against the pinned schema before anything is shown.</p></div>
+  </div>
+</div></section>
+
+<!-- ═══ HONESTY ══════════════════════════════════════════════════ -->
+<section id="honesty"><div class="wrap">
+  <div class="rv">
+    <span class="kicker">The one decision</span>
+    <h2>When the clerk doesn't<br>know, it says so.</h2>
+    <p style="margin-top:18px">A checklist that is 70&nbsp;% right is more dangerous than no
+      checklist, because it gets acted on. So a field nobody answered stays
+      <span class="steel">empty and grey</span> — not filled with a typical value, and not
+      quietly dropped so the gap disappears.</p>
+    <p style="margin-top:14px">An unknown fee costs you one question at the window. An invented
+      one costs you the trip.</p>
+    <div class="axis">
+      <span class="sw sw-a"></span><span class="steel">nobody has said this yet</span>
+      <span style="color:var(--low)">→</span>
+      <span class="sw sw-b"></span><span class="amber">a clerk said it, on the record</span>
+    </div>
+  </div>
+  <div class="stats rv" id="stats">
+    <div><div class="n" data-count="210">210</div><div class="l">tests, no credentials needed</div></div>
+    <div><div class="n" data-count="11520">11,520</div><div class="l">contract cases verified</div></div>
+    <div><div class="n">8 / 8</div><div class="l">CALL-E error codes routed</div></div>
+    <div><div class="n amber">0</div><div class="l">values invented, by construction</div></div>
+  </div>
+</div></section>
+
+<!-- ═══ SAFETY ═══════════════════════════════════════════════════ -->
+<section id="safety"><div class="wrap">
+  <div class="rv">
+    <span class="kicker">Calling a public counter</span>
+    <h2>The person answering<br>never opted in.</h2>
+    <p style="margin-top:18px">That asymmetry drives every rule here, and it is the part of this
+      project we most want read.</p>
+    <ul class="plain">
+      <li>The call states what it is and asks if now is a good time. "No" ends it, and there is
+        no call back that day.</li>
+      <li>One call per office, per procedure, per day. A retry that mints a fresh key is a bug,
+        not a workaround — these are queues with real people in them.</li>
+      <li>Published general-enquiries lines only, during opening hours. Never a personal mobile,
+        never an emergency or crisis line.</li>
+      <li>No personal data is ever sent as a call variable. The clerk is being asked about a
+        procedure, not about a person.</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- ═══ BUILD ════════════════════════════════════════════════════ -->
+<section id="build"><div class="wrap">
+  <div class="rv">
+    <span class="kicker">For developers</span>
+    <h2>Point it at your city.</h2>
+    <p style="margin-top:18px">Goals are owner-scoped in CALL-E, so what ships is the Goal
+      specification plus the client rather than a shared endpoint. Publish your own copy, add
+      one sourced number, and it is yours.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/edycutjong/countercall/blob/main/JUDGE.md">For judges: the 30-second path</a>
+      <a class="btn" href="https://github.com/edycutjong/countercall">Read the source →</a>
+    </div>
+  </div>
+</div></section>
+
+</main>
+
+<footer><div class="wrap row">
+  <span>CounterCall · built for the CALL-E Hackathon · v0.0.0-dev</span>
+  <span>
+    <a href="pitch/">Pitch</a> ·
+    <a href="https://github.com/edycutjong/countercall/blob/main/JUDGE.md">Judges</a> ·
+    <a href="https://github.com/edycutjong/countercall">GitHub</a> ·
+    MIT
+  </span>
+</div></footer>
+
+<!-- ════════════════════════════════════════════════════════════════
+     THE LIVE RESULT.
+
+     null because no real call has been placed yet, so the page renders an
+     awaiting state rather than a sample. That is not a placeholder we forgot
+     to fill — it is the product's own claim applied to its own landing page.
+     A site whose thesis is "we never state a value nobody said" cannot invent
+     one to look finished.
+
+     To go live, paste one real Goal Run result here:
+       {"office":"…","procedure":"…","runId":"grun_…","result":{…}}
+     ════════════════════════════════════════════════════════════════ -->
+<script id="call-result" type="application/json">null</script>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Sticky nav hairline ─────────────────────────────────────── */
+  var nav = document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('stuck', window.scrollY > 8); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  /* ── Hero mechanism: rows fill one at a time, the last never does ── */
+  var mech = document.getElementById('mech');
+  var rows = [].slice.call(mech.querySelectorAll('.crow'));
+  function playMechanism(){
+    rows.forEach(function(r){ r.className = 'crow'; r.style.removeProperty('--w'); });
+    rows.forEach(function(r, i){
+      var delay = reduce ? 0 : 260 + i * 420;
+      setTimeout(function(){
+        if (r.dataset.empty) { r.classList.add('empty','done'); }
+        else { r.style.setProperty('--w', r.dataset.fill + 'px'); r.classList.add('filled');
+               setTimeout(function(){ r.classList.add('done'); }, reduce ? 0 : 320); }
+      }, delay);
+    });
+  }
+  document.getElementById('replay').addEventListener('click', playMechanism);
+
+  /* ── Reveal on scroll ────────────────────────────────────────── */
+  var revealables = [].slice.call(document.querySelectorAll('.rv'));
+  if (reduce || !('IntersectionObserver' in window)) {
+    revealables.forEach(function(el){ el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {rootMargin:'0px 0px -12% 0px', threshold:.08});
+    revealables.forEach(function(el){ io.observe(el); });
+    // Failsafe: whatever happens, nothing stays hidden. An observer that never
+    // fires must not cost a reader the page.
+    setTimeout(function(){
+      revealables.forEach(function(el){ el.classList.add('in'); });
+    }, 2500);
+  }
+
+  /* ── Count-up on the stat row, once ──────────────────────────── */
+  var stats = document.getElementById('stats');
+  function countUp(){
+    stats.querySelectorAll('[data-count]').forEach(function(el){
+      var target = parseInt(el.dataset.count, 10);
+      if (reduce){ el.textContent = target.toLocaleString('en-US'); return; }
+      var start = performance.now(), dur = 900;
+      (function step(now){
+        var t = Math.min(1, (now - start) / dur);
+        var eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(target * eased).toLocaleString('en-US');
+        if (t < 1) requestAnimationFrame(step);
+      })(start);
+    });
+  }
+  if ('IntersectionObserver' in window){
+    var so = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if (e.isIntersecting){ countUp(); so.disconnect(); } });
+    }, {threshold:.4});
+    so.observe(stats);
+  } else { countUp(); }
+
+  /* ── The result card: real data, or an honest awaiting state ─── */
+  var PHRASING = {
+    payment_method:{cash:'Cash',card:'Card',both:'Cash or card',unknown:null},
+    appointment_required:{yes:'Yes — book first',no:'No — walk in',unknown:null},
+    originals_or_copies:{originals:'Originals',copies:'Photocopies',
+                         both:'Originals and copies',unknown:null}
+  };
+  var CERTAINTY = {
+    confident:'The clerk answered confidently.',
+    unsure:'The clerk was unsure. Verify these details in person.',
+    refused:'The clerk declined to answer some of this.'
+  };
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+  /* A value nobody gave renders as a dashed box, never as a substitute. */
+  function row(label, value){
+    if (value === null || value === undefined){
+      return '<div class="crow empty done"><span class="k">'+label+
+             '</span><span class="bar" style="--w:92px"></span>'+
+             '<span class="tag">not said</span></div>';
+    }
+    return '<div class="crow done"><span class="k">'+label+
+           '</span><span class="v" style="color:var(--accent);font-weight:600;font-size:14px">'+
+           esc(value)+'</span></div>';
+  }
+  function awaiting(){
+    return '<div class="card">'+
+      '<div class="card-head"><span class="t">No call has been placed yet.</span>'+
+      '<span class="s">awaiting first Goal Run</span></div>'+
+      '<div class="card-foot" style="margin-top:16px;border-top:0;padding-top:0">'+
+      '<strong style="color:var(--primary);display:block;margin-bottom:8px;letter-spacing:.08em">'+
+      'WHY THIS IS EMPTY</strong>'+
+      'This page will not show a sample checklist. Every value it displays has to come from a '+
+      'real clerk on a real call — that is the entire product. Showing an invented one here '+
+      'to look finished would falsify the claim.</div></div>';
+  }
+  function card(d){
+    var r = d.result || {};
+    var fee = (typeof r.total_fee_idr === 'number' && isFinite(r.total_fee_idr))
+      ? 'Rp ' + Math.round(r.total_fee_idr).toLocaleString('id-ID') : null;
+    var docs = String(r.required_documents_text || '').split('\n')
+      .map(function(l){ return l.replace(/^\s*[-*•]\s*/,'').trim(); }).filter(Boolean);
+    return '<div class="card">'+
+      '<div class="card-head"><span class="t">'+esc(d.office||'')+'</span>'+
+      '<span class="s">'+esc(d.procedure||'')+'</span></div>'+
+      '<ul class="plain" style="margin-top:14px">'+
+        docs.map(function(x){ return '<li style="padding:6px 0 6px 28px">'+esc(x)+'</li>'; }).join('')+
+      '</ul>'+
+      row('Documents', PHRASING.originals_or_copies[r.originals_or_copies]) +
+      row('Fee', fee) +
+      row('Payment', PHRASING.payment_method[r.payment_method]) +
+      row('Appointment', PHRASING.appointment_required[r.appointment_required]) +
+      // The verbatim line is span grounding — the evidence for every row above it.
+      // A card without it is a claim with its source removed.
+      (r.clerk_quote ? '<div class="quote">"'+esc(r.clerk_quote)+'"</div>' : '') +
+      '<div class="card-foot">'+esc(CERTAINTY[r.clerk_certainty]||'')+
+      ' A clerk\'s spoken answer is informational, not legally binding.'+
+      (d.runId ? '<br>CALL-E run '+esc(d.runId) : '')+'</div></div>';
+  }
+
+  var data = null;
+  try { data = JSON.parse(document.getElementById('call-result').textContent); }
+  catch (e) { data = null; }
+  document.getElementById('card-slot').innerHTML =
+    (data && data.result) ? card(data) : awaiting();
+
+  playMechanism();
+})();
+</script>
+</body>
+</html>

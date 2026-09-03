@@ -114,6 +114,9 @@ jobs:
           node scripts/bench.mjs --plan --calls 5
           echo "✅ entry points run with no CALLE_API_KEY present"
 
+      - name: Web surfaces pass static checks
+        run: node scripts/check_web.mjs
+
       - name: Skill package is complete
         run: |
           test -f skills/countercall/SKILL.md
@@ -201,6 +204,6 @@ jobs:
           echo "  ✅ Stage 1 — Code Quality (eslint, tests, coverage)"
           echo "  ✅ Stage 2 — Secret Scanning (TruffleHog, full history)"
           echo "  ✅ Stage 2 — Dependency Audit (npm audit + licenses)"
-          echo "  ✅ Stage 3 — Package Verification (clean install, skill intact)"
+          echo "  ✅ Stage 3 — Package Verification (clean install, skill + web intact)"
           echo "  ✅ Stage 4 — Safety Boundary (refuse-to-dial, no test dials)"
           echo "  ✅ Stage 5 — Contract Verification (exhaustive sweep + regressions)"

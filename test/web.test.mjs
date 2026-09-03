@@ -3,18 +3,21 @@
  * it may not display a value nobody said.
  *
  * `assets/ASSETS.md` blocks the invented `Rp 650.000` / `3m41s` call from the gallery, the
- * README and the video. This suite extends that mechanically to `docs/index.html`, which is
- * what GitHub Pages serves and therefore the first thing a judge sees.
+ * README and the video. This suite extends that mechanically to the pages GitHub Pages
+ * serves from `web/` — the first thing a judge sees.
  *
  * These are string assertions over the shipped file rather than DOM tests — the page has no
  * build step and no dependencies, so the file on disk is exactly what ships.
  */
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const PAGE = readFileSync(fileURLToPath(new URL('../docs/index.html', import.meta.url)), 'utf8');
+const read = (rel) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
+const PAGE = read('../web/index.html');
+const DECK = read('../web/pitch/index.html');
+const NOTFOUND = read('../web/404.html');
 
 /** The page with every HTML comment removed — what actually renders. */
 const RENDERED = PAGE.replace(/<!--[\s\S]*?-->/g, ' ');
@@ -56,7 +59,7 @@ describe('landing page ships no invented call data', () => {
   });
 
   test('an unanswered field renders a dashed box, never a substitute', () => {
-    assert.ok(PAGE.includes('class="crow unsaid"'));
+    assert.ok(PAGE.includes('class="crow empty done"'));
     assert.ok(/value === null \|\| value === undefined/.test(PAGE));
   });
 
@@ -77,12 +80,23 @@ describe('landing page hygiene', () => {
     assert.ok(/esc\(d\.office/.test(PAGE));
   });
 
-  test('has no image tags, so no link can break or fabricate', () => {
-    assert.ok(!/<img\b/.test(RENDERED));
+  test('every image is a local file that exists', () => {
+    // Was "no image tags at all", which was true only while the page had no brand
+    // assets and no social card. Both now exist and are checked instead of banned.
+    const srcs = [...RENDERED.matchAll(/<img[^>]+src="([^"]+)"/g)].map((m) => m[1]);
+    assert.ok(srcs.length > 0, 'the page should carry its brand mark');
+    for (const src of srcs) {
+      assert.ok(!/^https?:/.test(src), `remote image: ${src}`);
+      assert.ok(existsSync(fileURLToPath(new URL('../web/' + src, import.meta.url))), src);
+    }
   });
 
-  test('declares no og:image while the only one carries invented data', () => {
-    assert.ok(!/<meta property="og:image"/.test(RENDERED));
+  test('declares an og:image, and it is the clean one', () => {
+    // The old assertion banned og:image entirely, because the only one available
+    // rendered the fabricated Rp 650.000. assets/generate-og-web.html now produces
+    // one with no call data at all, so the card is declared rather than omitted.
+    assert.match(RENDERED, /<meta property="og:image" content="[^"]+og-image\.png"/);
+    assert.ok(existsSync(fileURLToPath(new URL('../web/og-image.png', import.meta.url))));
   });
 
   test('carries the not-legally-binding line', () => {
@@ -91,5 +105,41 @@ describe('landing page hygiene', () => {
 
   test('states the version honestly as a dev build', () => {
     assert.ok(PAGE.includes('v0.0.0-dev'));
+  });
+});
+
+describe('every published page is free of fabricated call data', () => {
+  const strip = (h) => h.replace(/<!--[\s\S]*?-->/g, ' ')
+                        .replace(/toLocaleString\([^)]*\)/g, ' ');
+
+  for (const [name, html] of [['landing', PAGE], ['deck', DECK], ['404', NOTFOUND]]) {
+    test(`${name} renders no rupiah figure`, () => {
+      assert.ok(!/Rp ?\d/.test(strip(html)), `${name} renders a fabricated fee`);
+    });
+    test(`${name} renders no call duration`, () => {
+      assert.ok(!/\d+m\d+s/.test(strip(html)), `${name} renders a fabricated duration`);
+    });
+  }
+
+  test('the deck labels its illustrative values in frame', () => {
+    // Slide 7 shows values from references/examples.md, which states they are not
+    // recordings. It may show them only while it says so.
+    if (/Kartu Keluarga asli/.test(DECK)) {
+      assert.match(DECK, /not a call recording/i);
+    }
+  });
+
+  test('the deck still has exactly ten slides', () => {
+    assert.equal((DECK.match(/<section\b(?=[^>]*class="slide)/g) || []).length, 10);
+  });
+
+  test('no deck slide lost its speaker notes', () => {
+    const notes = DECK.match(/data-notes="[^"]{80,}"/g) || [];
+    assert.equal(notes.length, 10);
+  });
+
+  test('404 uses root-absolute asset paths, which is what Pages needs', () => {
+    // A relative path here resolves against the missing URL's directory and breaks.
+    assert.match(NOTFOUND, /href="\/countercall\/icon\.svg"/);
   });
 });
