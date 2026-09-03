@@ -21,6 +21,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { relative } from 'node:path';
 
 import { parseArgs, validateOffice, idempotencyKey, loadOffices } from '../skills/countercall/scripts/_lib.mjs';
 import { validateResult } from '../skills/countercall/scripts/contract.mjs';
@@ -61,7 +62,9 @@ if (args.report) {
   const records = loadRecords();
   const summary = summarize(records);
   if (summary.attempts === 0) {
-    console.error(`No call records in ${RECORDS}.`);
+    // Repo-relative, not absolute: an author's machine path in a user-facing error
+    // is noise to every user, and it leaks the directory structure around the repo.
+    console.error(`No call records in ${relative(process.cwd(), RECORDS)}.`);
     console.error('Run `node scripts/bench.mjs --live --calls 20` first.');
     console.error('This script will not invent numbers.');
     process.exit(3);
