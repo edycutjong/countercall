@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test test/*.test.mjs",
-    "test:coverage": "node --experimental-test-coverage --test \"test/**/*.test.mjs\"",
+    "test:coverage": "node --experimental-test-coverage --test test/*.test.mjs",
     "audit": "npm audit --audit-level=high",
     "bench": "node scripts/bench.mjs",
     "check:counts": "node scripts/check_counts.mjs",
