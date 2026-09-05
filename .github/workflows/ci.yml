@@ -156,12 +156,8 @@ jobs:
       - name: CLI contract suite
         run: node --test test/cli.test.mjs
 
-      - name: No test may request a live call
-        run: |
-          if grep -rn -- "--live" test/ | grep -v "must never\|no test\|without --live\|fails closed\|refuses\|//"; then
-            echo "::error::a test requests --live"; exit 1
-          fi
-          echo "✅ no test dials"
+      - name: No test may reach the dialler
+        run: node scripts/check_no_dial.mjs
 
   # ── STAGE 5: Contract Verification ────────────────────────
   contract:
