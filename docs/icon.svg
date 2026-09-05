@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"
+     role="img" aria-label="CounterCall — places one real call to a government counter and returns a checklist of what to bring">
+  <!-- THE MARK: a checkmark whose rising leg is four voice bars.
+       The short descending stroke is the call going out (steel, unverified).
+       The bars are the answer coming back as structure, climbing steel to
+       amber: left is what nobody confirmed, right is what a clerk said out
+       loud. Deliberately not a handset — see assets/ASSETS.md §1 ledger.
+       Colours use the CSS-variable-with-hex-fallback pattern: the hex applies
+       when Playwright rasterises the standalone file, the token wins inside
+       the app. (XML comments may not contain a double hyphen, so the token
+       names are spelled out rather than quoted here.) -->
+  <defs>
+    <radialGradient id="cc-plate" cx="34%" cy="26%" r="96%">
+      <stop offset="0%" stop-color="#18232F"/>
+      <stop offset="62%" stop-color="#0F151C"/>
+      <stop offset="100%" stop-color="#0B0F14"/>
+    </radialGradient>
+
+    <!-- THE AXIS: unverified (steel) at the left, spoken (amber) at the right.
+         Painted across the bar group in user space so each bar takes the
+         colour of its position on the axis, not its own local ramp. -->
+    <linearGradient id="cc-axis" x1="197" y1="0" x2="409" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="var(--unverified, #6E8CA8)"/>
+      <stop offset="34%"  stop-color="var(--unverified, #6E8CA8)"/>
+      <stop offset="72%"  stop-color="var(--spoken, #F2B33D)"/>
+      <stop offset="100%" stop-color="var(--spoken, #F2B33D)"/>
+    </linearGradient>
+
+    <filter id="cc-lift" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+
+    <clipPath id="cc-plate-clip">
+      <rect x="0" y="0" width="512" height="512" rx="118"/>
+    </clipPath>
+  </defs>
+
+  <!-- Plate: the icon carries its own background so it survives GitHub light
+       AND dark without a halo. -->
+  <rect x="0" y="0" width="512" height="512" rx="118" fill="url(#cc-plate)"/>
+  <g clip-path="url(#cc-plate-clip)">
+    <circle cx="96" cy="104" r="168" fill="var(--unverified, #6E8CA8)" opacity="0.10"/>
+    <circle cx="424" cy="420" r="150" fill="var(--spoken, #F2B33D)" opacity="0.09"/>
+    <!-- form ruling: the counter's paperwork, barely there -->
+    <g stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1">
+      <path d="M0 128 H512 M0 216 H512 M0 304 H512 M0 392 H512"/>
+    </g>
+  </g>
+  <rect x="1" y="1" width="510" height="510" rx="117" fill="none"
+        stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="2"/>
+
+  <!-- Soft lift under the amber end only — the evidence side glows, the
+       unverified side does not. -->
+  <g filter="url(#cc-lift)" opacity="0.34">
+    <rect x="313" y="196" width="38" height="152" rx="19" fill="var(--spoken, #F2B33D)"/>
+    <rect x="371" y="146" width="38" height="202" rx="19" fill="var(--spoken, #F2B33D)"/>
+  </g>
+
+  <!-- The call going out: the tick's short descending stroke -->
+  <path d="M 120 238 L 208 330" fill="none" stroke="var(--unverified, #6E8CA8)"
+        stroke-width="36" stroke-linecap="round"/>
+
+  <!-- The answer coming back: four voice bars climbing into the tick -->
+  <g fill="url(#cc-axis)">
+    <rect x="197" y="290" width="38" height="58"  rx="19"/>
+    <rect x="255" y="244" width="38" height="104" rx="19"/>
+    <rect x="313" y="196" width="38" height="152" rx="19"/>
+    <rect x="371" y="146" width="38" height="202" rx="19"/>
+  </g>
+</svg>

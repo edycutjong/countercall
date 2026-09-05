@@ -1,14 +1,16 @@
 <!--
   PENDING before submission — grep this file for "PENDING" and resolve every hit:
-  1. Hero image + icon. assets/readme-hero-animated.svg and readme-hero.png both render an
+  1. Hero image. assets/readme-hero-animated.svg and readme-hero.png both render an
      INVENTED call (Rp 650.000) and are blocked by assets/ASSETS.md until re-exported from
-     a real goals.run result. assets/icon.svg is clean — /publish copies it to docs/.
+     a real goals.run result. The icon is clean and is shipped at docs/icon.svg.
   2. The Engineering Rigor benchmark rows — fill from `npm run bench -- --report`.
-  3. CI + Release badges — need a GitHub remote; both 404 until one exists.
-  4. Demo video URL, repo URL, judge demo link.
+  3. Demo video URL, and the DEMO.md live-proof line, which needs a real call's runId.
+
+  Resolved 2026-09-05: repo URL, judge demo link, live URL, CI badge, Release badge (v1.0.0).
 -->
 
 <div align="center">
+  <img src="docs/icon.svg" alt="CounterCall icon" width="144">
   <h1>CounterCall 📞</h1>
   <p><em>Before you lose a morning at the counter, CALL-E phones the office and tells you exactly what to bring.</em></p>
 
@@ -226,7 +228,7 @@ it must refuse — with credentials present and `--live` requested.
 ### Installation
 
 ```bash
-git clone <REPO_URL> && cd countercall   # PENDING: repo URL
+git clone https://github.com/edycutjong/countercall.git && cd countercall
 npm install
 npm test                                  # 233 tests, no credentials needed
 ```
@@ -299,8 +301,10 @@ countercall/
 ## 📽️ Demo Materials
 
 - **For judges:** [JUDGE.md](JUDGE.md) — the claim, the 30-second path, the receipts
+- **Live site:** <https://countercall.edycu.dev> — no sign-up, no key, free through 2026-10-13
+- **Architecture:** <https://countercall.edycu.dev/architecture/> — every surface and every refusal
 - **Demo video:** <!-- PENDING: video URL (public, YouTube or Vimeo, under 3 minutes) -->
-- **Live proof:** <!-- PENDING: DEMO.md with a real call's runId -->
+- **Live proof:** <!-- PENDING: [DEMO.md](DEMO.md) needs a real call's runId -->
 
 ## 📄 License
 
