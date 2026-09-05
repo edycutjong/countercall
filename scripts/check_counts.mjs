@@ -15,7 +15,7 @@
  * Exit 0 = consistent, 1 = drift.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
@@ -25,11 +25,27 @@ const FIX = process.argv.includes('--fix');
 /** Surfaces a judge can read, and the count each is allowed to quote. */
 const SURFACES = ['README.md', 'JUDGE.md', 'DEMO.md', 'web/index.html', 'web/pitch/index.html'];
 
+/**
+ * The files the suite actually runs. Mirrors package.json's `node --test test/*.test.mjs`.
+ *
+ * Both used to pass a recursive `test` glob to node as a literal string. Node only
+ * expands globs in --test from v21, so on the Node 20 leg of the CI matrix the runner was
+ * handed a path that does not exist and exited 1 — while package.json's `engines` and the
+ * README badge both advertise Node >= 20. Shell expansion and readdir agree on every
+ * version; fs.globSync would not, since it lands in Node 22.
+ */
+function testFiles() {
+  return readdirSync(join(ROOT, 'test'))
+    .filter((f) => f.endsWith('.test.mjs'))
+    .sort()
+    .map((f) => join('test', f));
+}
+
 /** Run the suite and take the count from its own output — never from a constant. */
 function actualTestCount() {
   let out;
   try {
-    out = execFileSync('node', ['--test', 'test/**/*.test.mjs'], {
+    out = execFileSync('node', ['--test', ...testFiles()], {
       cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (e) {
