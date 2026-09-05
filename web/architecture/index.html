@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CounterCall — architecture</title>
+<meta name="description" content="How CounterCall turns one phone call into a schema-validated checklist: four CALL-E Goals API surfaces, and four refusals that fire before a wrong answer can reach anyone.">
+<meta name="theme-color" content="#0B0F14">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://countercall.edycu.dev/architecture/">
+
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="CounterCall">
+<meta property="og:url" content="https://countercall.edycu.dev/architecture/">
+<meta property="og:title" content="CounterCall — architecture">
+<meta property="og:description" content="Four CALL-E surfaces, and four refusals that fire before a wrong answer can reach anyone.">
+<meta property="og:image" content="https://countercall.edycu.dev/og-image.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="CounterCall — know what to bring before you go.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CounterCall — architecture">
+<meta name="twitter:description" content="Four CALL-E surfaces, and four refusals that fire before a wrong answer can reach anyone.">
+<meta name="twitter:image" content="https://countercall.edycu.dev/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;800&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   THE DESIGN LAW (assets/_tokens.css): amber marks only what a clerk
+   said out loud. Amber is the evidence budget, not the decoration
+   budget. Steel is the state where nobody has answered yet.
+
+   On this page that law does real work. Exactly ONE node in the
+   diagram is amber — renderCard, the only place clerk speech exists.
+   Every refusal is red, every step before an answer is steel. A
+   reader can therefore find the evidence by looking for the colour.
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#0B0F14; --surface:#141A22; --surface-2:#18202A; --line:#243040;
+  --primary:#6E8CA8; --accent:#F2B33D;
+  --text:#E8EDF4; --muted:#8494A8; --low:#4A5A6E;
+  --ok:#3DD68C; --stop:#FF6B6B;
+  --ui:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+  --pad:clamp(20px,5vw,28px);
+  --maxw:1120px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--ui); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 var(--pad)}
+
+/* ── nav ─────────────────────────────────────────────── */
+.nav{
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10;
+  background:rgba(11,15,20,.86); backdrop-filter:blur(10px);
+}
+.nav .wrap{display:flex; align-items:center; gap:22px; height:60px}
+.brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; text-decoration:none}
+.brand img{width:26px; height:26px; display:block}
+.nav nav{margin-left:auto; display:flex; gap:20px; font-family:var(--mono); font-size:13px}
+.nav nav a{color:var(--muted); text-decoration:none; transition:color .15s}
+.nav nav a:hover,.nav nav a:focus-visible{color:var(--text)}
+.nav nav a[aria-current]{color:var(--accent)}
+@media(max-width:640px){ .nav nav a.opt{display:none} }
+
+/* ── hero ────────────────────────────────────────────── */
+.hero{padding:clamp(48px,9vw,86px) 0 clamp(28px,5vw,42px)}
+.eyebrow{
+  font-family:var(--mono); font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--low); margin:0 0 18px;
+}
+h1{
+  font-size:clamp(34px,6.2vw,62px); line-height:1.03; letter-spacing:-.035em;
+  font-weight:800; margin:0 0 22px; max-width:17ch;
+}
+.lede{font-size:clamp(17px,2.1vw,20px); color:var(--muted); max-width:62ch; margin:0}
+.lede b{color:var(--text); font-weight:600}
+
+/* ── legend ──────────────────────────────────────────── */
+.legend{
+  display:flex; flex-wrap:wrap; gap:8px 26px; margin:36px 0 0;
+  padding:16px 18px; border:1px solid var(--line); border-radius:12px; background:var(--surface);
+  font-family:var(--mono); font-size:12.5px; color:var(--muted);
+}
+.legend span{display:flex; align-items:center; gap:9px}
+.sw{width:13px; height:13px; border-radius:3px; flex:none}
+.sw.flow{background:var(--surface-2); border:1.5px solid var(--primary)}
+.sw.stop{background:rgba(255,107,107,.12); border:1.5px solid var(--stop)}
+.sw.ok{background:rgba(61,214,140,.12); border:1.5px solid var(--ok)}
+.sw.ev{background:rgba(242,179,61,.14); border:1.5px solid var(--accent)}
+
+/* ── diagram ─────────────────────────────────────────── */
+.figure{margin:clamp(30px,5vw,48px) 0 0}
+.scroller{overflow-x:auto; -webkit-overflow-scrolling:touch}
+svg.flow{display:block; width:100%; min-width:680px; height:auto}
+
+.n-box{fill:var(--surface); stroke:var(--line); stroke-width:1.5}
+.n-dec{fill:var(--surface-2); stroke:var(--primary); stroke-width:1.5}
+.n-stop{fill:rgba(255,107,107,.09); stroke:var(--stop); stroke-width:1.5}
+.n-ring{fill:var(--surface-2); stroke:var(--primary); stroke-width:2.5}
+.n-ev{fill:rgba(242,179,61,.11); stroke:var(--accent); stroke-width:2}
+
+.t{font-family:var(--ui); font-size:15px; font-weight:600; fill:var(--text)}
+.t-sm{font-family:var(--mono); font-size:11.5px; fill:var(--muted); font-weight:400}
+.t-stop{fill:var(--stop)}
+.t-ev{fill:var(--accent)}
+.t-dec{font-style:italic; font-weight:500; fill:var(--text)}
+
+.edge{stroke:var(--primary); stroke-width:1.8; fill:none}
+.edge-stop{stroke:var(--stop); stroke-width:1.8; fill:none; stroke-dasharray:5 4}
+.edge-ev{stroke:var(--accent); stroke-width:2.2; fill:none}
+.elabel{font-family:var(--mono); font-size:11px; fill:var(--low)}
+
+.ringpulse{transform-origin:center; animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25} 50%{opacity:.75}}
+@media(prefers-reduced-motion:reduce){ .ringpulse{animation:none; opacity:.4} }
+
+/* ── stage cards ─────────────────────────────────────── */
+.stages{margin:clamp(48px,7vw,76px) 0 0}
+h2{font-size:clamp(24px,3.4vw,34px); letter-spacing:-.025em; margin:0 0 8px; font-weight:800}
+.sub{color:var(--muted); margin:0 0 28px; max-width:64ch}
+.grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(288px,1fr))}
+.card{
+  border:1px solid var(--line); border-radius:14px; background:var(--surface);
+  padding:20px 20px 18px; position:relative; overflow:hidden;
+  transition:border-color .18s, transform .18s;
+}
+.card:hover{border-color:var(--primary); transform:translateY(-2px)}
+.card::before{content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--primary)}
+.card.stop::before{background:var(--stop)}
+.card.ev::before{background:var(--accent)}
+.card h3{margin:0 0 4px; font-size:16.5px; letter-spacing:-.01em}
+.card .api{font-family:var(--mono); font-size:12px; color:var(--primary); margin:0 0 10px}
+.card.stop .api{color:var(--stop)}
+.card.ev .api{color:var(--accent)}
+.card p{margin:0 0 12px; font-size:14.5px; color:var(--muted)}
+.card code{
+  font-family:var(--mono); font-size:11.5px; color:var(--text);
+  background:var(--surface-2); border:1px solid var(--line);
+  border-radius:5px; padding:2px 6px; display:inline-block; word-break:break-all;
+}
+
+/* ── error codes ─────────────────────────────────────── */
+.codes{display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 0}
+.codes code{
+  font-family:var(--mono); font-size:12px; color:var(--stop);
+  background:rgba(255,107,107,.07); border:1px solid rgba(255,107,107,.3);
+  border-radius:6px; padding:5px 10px;
+}
+
+/* ── callout ─────────────────────────────────────────── */
+.callout{
+  margin:clamp(44px,6vw,64px) 0 0; padding:22px 24px;
+  border:1px solid var(--line); border-left:3px solid var(--accent);
+  border-radius:12px; background:var(--surface);
+}
+.callout p{margin:0; color:var(--muted); font-size:15.5px}
+.callout b{color:var(--text)}
+
+/* ── footer ──────────────────────────────────────────── */
+footer{margin:clamp(56px,8vw,90px) 0 0; border-top:1px solid var(--line); padding:26px 0 50px}
+footer .wrap{display:flex; flex-wrap:wrap; gap:14px 26px; align-items:center}
+footer a{font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none}
+footer a:hover{color:var(--text)}
+footer .sp{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--low)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../icon.svg" alt=""> CounterCall</a>
+    <nav>
+      <a class="opt" href="../#how">How</a>
+      <a class="opt" href="../#honesty">Why it refuses</a>
+      <a href="./" aria-current="page">Architecture</a>
+      <a href="../pitch/">Pitch</a>
+      <a href="https://github.com/edycutjong/countercall">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Architecture</p>
+      <h1>Four refusals guard one phone call.</h1>
+      <p class="lede">
+        The happy path is four CALL-E Goals API calls. Everything else on this page is the
+        machinery that stops a <b>wrong</b> checklist from reaching someone who is about to
+        cross a city on the strength of it. Two refusals fire <b>before</b> the phone rings;
+        two more fire after it is answered.
+      </p>
+
+      <div class="legend">
+        <span><i class="sw flow"></i> step before anyone has answered</span>
+        <span><i class="sw stop"></i> refusal — renders no checklist</span>
+        <span><i class="sw ev"></i> a clerk said this out loud</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="figure">
+    <div class="wrap">
+      <div class="scroller">
+        <svg class="flow" viewBox="58 0 834 1178" role="img"
+             aria-label="Flowchart. A user names an office and procedure. preflight validates the number against the seed file; an unsourced number is refused with exit code 3. goals.get reads the live contract; if it has drifted from the pinned contract the dial is refused. goals.run places the call with an idempotency key — this is where the phone rings. goals.waitForResult polls for an outcome; a terminal GoalRunError renders an honest failure. The result is validated against the pinned schema; an invalid result is refused. Only a valid result renders the checklist card.">
+          <defs>
+            <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#6E8CA8"/>
+            </marker>
+            <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#FF6B6B"/>
+            </marker>
+            <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#F2B33D"/>
+            </marker>
+          </defs>
+
+          <!-- 1 · input -->
+          <rect class="n-box" x="150" y="24" width="300" height="60" rx="11"/>
+          <text class="t" x="300" y="50" text-anchor="middle">You name the office and procedure</text>
+          <text class="t-sm" x="300" y="70" text-anchor="middle">no personal data is ever sent</text>
+          <line class="edge" x1="300" y1="84" x2="300" y2="122" marker-end="url(#a)"/>
+
+          <!-- 2 · preflight -->
+          <rect class="n-box" x="150" y="126" width="300" height="60" rx="11"/>
+          <text class="t" x="300" y="152" text-anchor="middle">preflight.mjs</text>
+          <text class="t-sm" x="300" y="172" text-anchor="middle">validate · diff contract · mint key</text>
+          <line class="edge" x1="300" y1="186" x2="300" y2="224" marker-end="url(#a)"/>
+
+          <!-- 3 · decision: sourced number -->
+          <rect class="n-dec" x="150" y="228" width="300" height="66" rx="11"/>
+          <text class="t t-dec" x="300" y="254" text-anchor="middle">Is the number in the seed file,</text>
+          <text class="t t-dec" x="300" y="275" text-anchor="middle">with a published source?</text>
+          <path class="edge-stop" d="M450,261 H560" marker-end="url(#r)"/>
+          <text class="elabel" x="505" y="252" text-anchor="middle">no</text>
+          <rect class="n-stop" x="564" y="231" width="300" height="60" rx="11"/>
+          <text class="t t-stop" x="714" y="256" text-anchor="middle">REFUSE — exit 3</text>
+          <text class="t-sm" x="714" y="276" text-anchor="middle">never infer a phone number</text>
+          <line class="edge" x1="300" y1="294" x2="300" y2="332" marker-end="url(#a)"/>
+
+          <!-- 4 · goals.get -->
+          <rect class="n-box" x="150" y="336" width="300" height="60" rx="11"/>
+          <text class="t" x="300" y="362" text-anchor="middle">goals.get</text>
+          <text class="t-sm" x="300" y="382" text-anchor="middle">read the LIVE published contract</text>
+          <line class="edge" x1="300" y1="396" x2="300" y2="434" marker-end="url(#a)"/>
+
+          <!-- 5 · decision: drift -->
+          <rect class="n-dec" x="150" y="438" width="300" height="66" rx="11"/>
+          <text class="t t-dec" x="300" y="464" text-anchor="middle">Does it still match the</text>
+          <text class="t t-dec" x="300" y="485" text-anchor="middle">contract we pinned?</text>
+          <path class="edge-stop" d="M450,471 H560" marker-end="url(#r)"/>
+          <text class="elabel" x="505" y="462" text-anchor="middle">drifted</text>
+          <rect class="n-stop" x="564" y="441" width="300" height="60" rx="11"/>
+          <text class="t t-stop" x="714" y="466" text-anchor="middle">REFUSE — re-pin first</text>
+          <text class="t-sm" x="714" y="486" text-anchor="middle">a stale schema dials a real person</text>
+          <line class="edge" x1="300" y1="504" x2="300" y2="542" marker-end="url(#a)"/>
+
+          <!-- 6 · goals.run — THE CALL -->
+          <circle class="ringpulse" cx="300" cy="576" r="46" fill="none" stroke="#6E8CA8" stroke-width="1.5"/>
+          <rect class="n-ring" x="150" y="546" width="300" height="60" rx="11"/>
+          <text class="t" x="300" y="572" text-anchor="middle">goals.run + Idempotency-Key</text>
+          <text class="t-sm" x="300" y="592" text-anchor="middle">☎ the phone rings here · once per day</text>
+          <line class="edge" x1="300" y1="606" x2="300" y2="644" marker-end="url(#a)"/>
+
+          <!-- 7 · waitForResult -->
+          <rect class="n-box" x="150" y="648" width="300" height="60" rx="11"/>
+          <text class="t" x="300" y="674" text-anchor="middle">goals.waitForResult</text>
+          <text class="t-sm" x="300" y="694" text-anchor="middle">poll to a terminal outcome</text>
+          <line class="edge" x1="300" y1="708" x2="300" y2="746" marker-end="url(#a)"/>
+
+          <!-- 8 · decision: result or error -->
+          <rect class="n-dec" x="150" y="750" width="300" height="66" rx="11"/>
+          <text class="t t-dec" x="300" y="776" text-anchor="middle">A result, or a terminal</text>
+          <text class="t t-dec" x="300" y="797" text-anchor="middle">GoalRunError?</text>
+          <path class="edge-stop" d="M450,783 H560" marker-end="url(#r)"/>
+          <text class="elabel" x="505" y="774" text-anchor="middle">error</text>
+          <rect class="n-stop" x="564" y="753" width="300" height="60" rx="11"/>
+          <text class="t t-stop" x="714" y="778" text-anchor="middle">renderFailure</text>
+          <text class="t-sm" x="714" y="798" text-anchor="middle">8 of 8 codes · never a partial card</text>
+          <line class="edge" x1="300" y1="816" x2="300" y2="854" marker-end="url(#a)"/>
+
+          <!-- 9 · decision: schema valid -->
+          <rect class="n-dec" x="150" y="858" width="300" height="66" rx="11"/>
+          <text class="t t-dec" x="300" y="884" text-anchor="middle">Valid against the pinned</text>
+          <text class="t t-dec" x="300" y="905" text-anchor="middle">schema, every field?</text>
+          <path class="edge-stop" d="M450,891 H560" marker-end="url(#r)"/>
+          <text class="elabel" x="505" y="882" text-anchor="middle">invalid</text>
+          <rect class="n-stop" x="564" y="861" width="300" height="60" rx="11"/>
+          <text class="t t-stop" x="714" y="886" text-anchor="middle">REFUSE — result_invalid</text>
+          <text class="t-sm" x="714" y="906" text-anchor="middle">additionalProperties: false</text>
+          <path class="edge-ev" d="M300,924 V968" marker-end="url(#g)"/>
+          <text class="elabel" x="322" y="950">valid</text>
+
+          <!-- 10 · the card -->
+          <rect class="n-ev" x="120" y="972" width="360" height="74" rx="12"/>
+          <text class="t t-ev" x="300" y="1000" text-anchor="middle">renderCard</text>
+          <text class="t-sm" x="300" y="1021" text-anchor="middle">6 typed fields + the verbatim clerk quote</text>
+          <text class="t-sm" x="300" y="1038" text-anchor="middle">a row nobody answered stays empty</text>
+
+          <!-- footnote -->
+          <text class="t-sm" x="300" y="1088" text-anchor="middle">Every red path renders NO checklist —</text>
+          <text class="t-sm" x="300" y="1106" text-anchor="middle">a half-parsed list is worse than none, because it gets acted on.</text>
+          <text class="t-sm" x="714" y="1088" text-anchor="middle">goals.list runs separately, discovering</text>
+          <text class="t-sm" x="714" y="1106" text-anchor="middle">the published procedure catalogue.</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="stages">
+    <div class="wrap">
+      <h2>Every surface, and where it lives</h2>
+      <p class="sub">
+        Seven measured CALL-E surfaces. Line numbers re-measured against
+        <code>v1.0.0</code>; <code>scripts/verify_live.mjs</code> holds the same table and
+        checks it against the live service.
+      </p>
+
+      <div class="grid">
+        <article class="card">
+          <h3>Discover the catalogue</h3>
+          <p class="api">goals.list</p>
+          <p>Lists the published Goals. This is the reuse mechanism itself — the thing that makes a procedure library possible rather than a single hard-coded script.</p>
+          <code>scripts/verify_calle.mjs:49</code>
+        </article>
+
+        <article class="card">
+          <h3>Read the live contract</h3>
+          <p class="api">goals.get</p>
+          <p>Fetches the published <code>input_schema</code> and <code>result_schema</code> before <em>every</em> dial, not once at deploy time. Costs one API call and converts a silent wrong answer into a loud refusal.</p>
+          <code>skills/countercall/scripts/preflight.mjs:45</code>
+        </article>
+
+        <article class="card">
+          <h3>Place the call</h3>
+          <p class="api">goals.run</p>
+          <p>The only method that makes a phone ring. Carries a business-stable idempotency key, so a retry after a crash can never double-dial a public line with a queue in front of it.</p>
+          <code>skills/countercall/scripts/call.mjs:70</code>
+        </article>
+
+        <article class="card">
+          <h3>Wait for a terminal outcome</h3>
+          <p class="api">goals.waitForResult</p>
+          <p>Polls until either a result or an error exists — never both, never neither. There is no timeout that quietly returns a partial answer.</p>
+          <code>skills/countercall/scripts/call.mjs:74</code>
+        </article>
+
+        <article class="card stop">
+          <h3>One call per day</h3>
+          <p class="api">Idempotency-Key</p>
+          <p><code>countercall:{office}:{procedure}:{date}:v1</code> — business-stable, not a random UUID. A key that changes on retry is a bug, not a workaround.</p>
+          <code>skills/countercall/scripts/_lib.mjs:62</code>
+        </article>
+
+        <article class="card stop">
+          <h3>Refuse on contract drift</h3>
+          <p class="api">diffContract</p>
+          <p>Compares the pinned contract against the live one and refuses the dial on any mismatch. Dialling a real person with a stale schema returns a result that looks fine and is quietly wrong.</p>
+          <code>skills/countercall/scripts/_lib.mjs:39</code>
+        </article>
+
+        <article class="card stop">
+          <h3>Route every failure</h3>
+          <p class="api">GoalRunError.code</p>
+          <p>All eight published codes map to distinct, honest outcomes. Not one of them renders a partial checklist.</p>
+          <code>skills/countercall/scripts/render.mjs:102</code>
+        </article>
+
+        <article class="card ev">
+          <h3>Render the evidence</h3>
+          <p class="api">renderCard</p>
+          <p>Six typed fields plus the verbatim line the clerk said. A field nobody answered renders empty and grey — never a typical value, never quietly dropped so the gap disappears.</p>
+          <code>skills/countercall/scripts/render.mjs:57</code>
+        </article>
+      </div>
+
+      <div class="codes" aria-label="The eight routed GoalRunError codes">
+        <code>no_answer</code><code>declined</code><code>result_invalid</code><code>result_unavailable</code>
+        <code>result_failed</code><code>timed_out</code><code>call_failed</code><code>canceled</code>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="callout">
+      <p>
+        <b>Why the schema is the product.</b> The phone call is the part CALL-E handles. The
+        hard part is the contract around it — pinning it, diffing it before every run, refusing
+        gracefully when it moves. <code>validateResult</code> and <code>renderCard</code> are
+        the decision function that must never be wrong, so they are verified across the
+        <b>entire input space the contract permits</b>: 1,296 valid results, 1,296 rendered
+        cards checked for invented values, 8,208 single-field corruptions rejected and 720
+        unexpected-key injections rejected — <b>11,520 cases</b>. The sweep found a real defect
+        while it was being written: an empty <code>clerk_quote</code> validated clean, which
+        would have rendered a card that looks sourced and is not.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="../">← Home</a>
+    <a href="../pitch/">Pitch deck</a>
+    <a href="https://github.com/edycutjong/countercall">Source</a>
+    <a href="https://github.com/edycutjong/countercall/blob/main/JUDGE.md">For judges</a>
+    <span class="sp">MIT © 2026 Edy Cu</span>
+  </div>
+</footer>
+
+</body>
+</html>

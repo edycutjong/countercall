@@ -18,6 +18,7 @@ const read = (rel) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)),
 const PAGE = read('../web/index.html');
 const DECK = read('../web/pitch/index.html');
 const NOTFOUND = read('../web/404.html');
+const VERSION = JSON.parse(read('../package.json')).version;
 
 /** The page with every HTML comment removed — what actually renders. */
 const RENDERED = PAGE.replace(/<!--[\s\S]*?-->/g, ' ');
@@ -103,8 +104,15 @@ describe('landing page hygiene', () => {
     assert.ok(PAGE.includes('not legally binding'));
   });
 
-  test('states the version honestly as a dev build', () => {
-    assert.ok(PAGE.includes('v0.0.0-dev'));
+  /**
+   * Was `assert.ok(PAGE.includes('v0.0.0-dev'))`. That pinned the page to a literal that
+   * stopped being honest the moment v1.0.0 was tagged — the assertion would have kept
+   * passing on a stale string and failed on a corrected one, which is backwards. The
+   * property is "the page states the version this tree actually is", so read it from
+   * package.json and let the two drift apart nowhere.
+   */
+  test('states the version this tree actually is', () => {
+    assert.ok(PAGE.includes(`v${VERSION}`), `landing page does not state v${VERSION}`);
   });
 });
 

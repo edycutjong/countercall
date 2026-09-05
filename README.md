@@ -14,6 +14,10 @@
 
   <br/>
 
+  [![Live demo](https://img.shields.io/badge/▶_Live-countercall.edycu.dev-F2B33D?style=for-the-badge)](https://countercall.edycu.dev)
+  [![Pitch deck](https://img.shields.io/badge/🎤_Pitch-deck-6E8CA8?style=for-the-badge)](https://countercall.edycu.dev/pitch/)
+  [![Architecture](https://img.shields.io/badge/🏗_Architecture-diagram-6E8CA8?style=for-the-badge)](https://countercall.edycu.dev/architecture/)
+
   [![Built for CALL-E](https://img.shields.io/badge/Devpost-CALL--E_Hackathon-8b5cf6?style=for-the-badge)](https://call-e.devpost.com/)
   [![For Judges](https://img.shields.io/badge/📋_For-Judges-06b6d4?style=for-the-badge)](JUDGE.md)
 
@@ -22,6 +26,8 @@
   ![Node.js](https://img.shields.io/badge/Node.js_≥20-339933?style=flat&logo=node.js&logoColor=white)
   ![JavaScript](https://img.shields.io/badge/JavaScript_ESM-F7DF1E?style=flat&logo=javascript&logoColor=black)
   ![CALL-E](https://img.shields.io/badge/CALL--E-Goals_API-1f6feb?style=flat)
+  [![CI](https://github.com/edycutjong/countercall/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/countercall/actions/workflows/ci.yml)
+  [![Release](https://img.shields.io/github/v/release/edycutjong/countercall?style=flat&color=6E8CA8)](https://github.com/edycutjong/countercall/releases)
   ![Tests](https://img.shields.io/badge/tests-233_passing-brightgreen?style=flat)
   [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
@@ -82,6 +88,18 @@ trip.
 
 ## 🏗️ Architecture & Tech Stack
 
+> **[→ Open the interactive architecture diagram](https://countercall.edycu.dev/architecture/)**
+> — every surface, every refusal, and the exact file and line each one lives at.
+
+<details>
+<summary><b>Or read the same flow inline (Mermaid)</b></summary>
+
+<br/>
+
+Colour carries meaning here, the same as everywhere else in this project: **steel** is a step
+taken before anyone has answered, **red** renders no checklist at all, and **amber** appears
+exactly once — on the only node that carries something a clerk actually said.
+
 ```mermaid
 graph TD
     A[User picks office + procedure] --> B[preflight.mjs]
@@ -97,7 +115,24 @@ graph TD
     H -->|result| J[validateResult vs pinned schema]
     J -->|invalid| I
     J -->|valid| K[renderCard — checklist + clerk quote]
+
+    classDef flow fill:#141A22,stroke:#243040,stroke-width:1.5px,color:#E8EDF4
+    classDef dec  fill:#18202A,stroke:#6E8CA8,stroke-width:1.5px,color:#E8EDF4
+    classDef ring fill:#18202A,stroke:#6E8CA8,stroke-width:3px,color:#E8EDF4
+    classDef stop fill:#2A1719,stroke:#FF6B6B,stroke-width:1.5px,color:#FF8F8F
+    classDef ev   fill:#2B2517,stroke:#F2B33D,stroke-width:2.5px,color:#F2B33D
+
+    class A,B,D,G flow
+    class C,E,H,J dec
+    class F ring
+    class R,R2,I stop
+    class K ev
+
+    linkStyle 2,5,9,11 stroke:#FF6B6B,stroke-dasharray:4 3
+    linkStyle 12 stroke:#F2B33D,stroke-width:2.5px
 ```
+
+</details>
 
 | Layer | Technology |
 |---|---|

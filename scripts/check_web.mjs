@@ -65,13 +65,29 @@ for (const file of pages) {
   const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((m) => m[1]);
   for (const ref of refs) {
     if (/^(https?:|mailto:|data:|#|\/\/)/.test(ref)) continue;
+    // A fragment on a relative path is a legitimate cross-page link ("../#how").
+    // Resolving it whole looked for a FILE named "#how" and reported every one of
+    // them dead, so the path and the fragment are checked separately.
+    const [path, frag] = ref.split('#');
     // The site is served from the root of its custom domain, so a root-absolute
     // path maps straight onto web/ with no project-path prefix to strip.
-    const target = ref.startsWith('/')
-      ? join(WEB, ref.slice(1))
-      : resolve(dirname(file), ref);
-    const candidates = [target, join(target, 'index.html')];
-    if (!candidates.some(existsSync)) fail(file, `dead local reference: ${ref}`);
+    const target = path.startsWith('/')
+      ? join(WEB, path.slice(1))
+      : resolve(dirname(file), path);
+    // Directory-first order matters: "../" resolves to a DIRECTORY that exists, and
+    // taking that as the hit skipped the anchor check below on every "../#x" link.
+    // The document a browser would actually load is the directory's index.html.
+    const indexed = join(target, 'index.html');
+    const hit = existsSync(indexed) ? indexed : existsSync(target) ? target : null;
+    if (!hit) { fail(file, `dead local reference: ${ref}`); continue; }
+    // And the anchor it points at must exist in the page it lands on — otherwise a
+    // renamed section silently drops every cross-page link that aimed at it.
+    if (frag && hit.endsWith('.html')) {
+      const targetHtml = stripComments(readFileSync(hit, 'utf8'));
+      if (!new RegExp(`id="${frag}"`).test(targetHtml)) {
+        fail(file, `dead cross-page anchor: ${ref}`);
+      }
+    }
   }
 
   // ── 4. in-page anchors resolve ─────────────────────────────────────────────
