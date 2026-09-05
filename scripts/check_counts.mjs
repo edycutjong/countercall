@@ -57,6 +57,11 @@ const CLAIMS = [
   // transcript in DEMO.md still said 232 — a false negative is worse than a noisy
   // check, because it is silent.
   /^#\s*(?:tests|pass)\s+(\d{3,4})\s*$/gim,
+  // A count-up animation overwrites its own element's text, so the number a judge
+  // actually reads is the ATTRIBUTE, not the markup. web/index.html shipped
+  // data-count="232" wrapping a literal 233: every forward pattern above matched the
+  // 233 and reported agreement, while the rendered page counted up to 232.
+  /data-count=["'](\d{3,4})["'][^>]*>[^<]*<\/div><div class="l">\s*tests\b/gi,
 ];
 
 const findings = [];
