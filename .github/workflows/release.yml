@@ -16,41 +16,26 @@ jobs:
         with:
           fetch-depth: 0        # full history — we read commits since the last tag
 
-      - name: Compute next version from Angular commits
+      # package.json is the single source of truth for the version.
+      #
+      # This step used to COMPUTE the next version from conventional-commit types since the
+      # last tag. That made the tagger authoritative and package.json a bystander, and the
+      # two immediately diverged: a feat commit tagged v1.1.0 while package.json still said
+      # 1.0.0 and the landing page — which reads package.json — displayed v1.0.0. Three
+      # surfaces, two answers. Now the file decides and the tag follows, so a release is a
+      # deliberate act rather than a side effect of a commit message.
+      - name: Read the version package.json declares
         id: ver
         run: |
           set -euo pipefail
-          LAST=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -z "$LAST" ]; then
-            RANGE=""; CUR="0.0.0"
-          else
-            RANGE="${LAST}..HEAD"; CUR="${LAST#v}"
-          fi
-          LOG=$(git log --format=%B $RANGE)
-          if [ -z "$(echo "$LOG" | tr -d '[:space:]')" ]; then
+          NEXT="v$(node -p "require('./package.json').version")"
+          if git rev-parse -q --verify "refs/tags/${NEXT}" >/dev/null; then
+            echo "${NEXT} is already tagged — nothing to release."
             echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-
-          BUMP=none
-          echo "$LOG" | grep -qE '^(feat|fix|perf)(\(.+\))?!:|BREAKING CHANGE:' && BUMP=major
-          [ "$BUMP" = none ] && echo "$LOG" | grep -qE '^feat(\(.+\))?:'        && BUMP=minor
-          [ "$BUMP" = none ] && echo "$LOG" | grep -qE '^(fix|perf)(\(.+\))?:'  && BUMP=patch
-          if [ "$BUMP" = none ]; then
-            echo "No releasable commits since ${LAST:-the beginning}."
-            echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-
-          IFS=. read -r MA MI PA <<< "$CUR"
-          case "$BUMP" in
-            major) MA=$((MA+1)); MI=0; PA=0 ;;
-            minor) MI=$((MI+1)); PA=0 ;;
-            patch) PA=$((PA+1)) ;;
-          esac
-          NEXT="v${MA}.${MI}.${PA}"
-          echo "Bump: $BUMP  ${LAST:-none} -> $NEXT"
-          echo "next=$NEXT"  >> "$GITHUB_OUTPUT"
-          echo "bump=$BUMP"  >> "$GITHUB_OUTPUT"
-          echo "skip=false"  >> "$GITHUB_OUTPUT"
+          echo "Releasing ${NEXT}"
+          echo "next=${NEXT}" >> "$GITHUB_OUTPUT"
+          echo "skip=false"   >> "$GITHUB_OUTPUT"
 
       - name: Tag and publish the release
         if: steps.ver.outputs.skip == 'false'
