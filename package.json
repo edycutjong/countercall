@@ -1,6 +1,6 @@
 {
   "name": "countercall",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "private": true,
   "type": "module",
   "description": "Phones an Indonesian government service counter and returns a validated checklist of what to bring.",
