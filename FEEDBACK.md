@@ -14,11 +14,12 @@ shipped. Nothing here is a wishlist item; every entry cost us a design change.
      All four findings went in the "bugs or issues" field, the two documentation-shaped
      ones also in the documentation field, and the what-worked section in "other feedback".
 
-     No confirmation URL exists. The form was submitted without a Google session, so it
-     could not send a response receipt — and signing in was not possible: the form's
-     "Login ke Google" link embeds the entire pre-filled response in its continue=
-     parameter, which at ~10KB exceeds Google's URL limit and returns HTTP 400. Submission
-     itself is unaffected; only the receipt is.
+     Submitted twice, both 2026-09-06, identical content. The first went through without a
+     Google session, so no receipt was issued — the form's "Login ke Google" link embeds the
+     entire pre-filled response in its continue= parameter, which at ~10KB exceeds Google's
+     URL limit and returns HTTP 400. The second was filed from a fresh page signed in as
+     edy.cu.tjong@gmail.com, which does produce a receipt. Same Devpost username and CALL-E
+     email on both, so they dedupe to one entrant.
 
      Also posted to Discord #support, as the form requests:
        https://discord.com/channels/1493880186826133504/1546014799350206464
