@@ -7,11 +7,23 @@ between 2026-08-19 and 2026-09-03.
 Each one is a thing we hit while building, with the reproduction and the workaround we
 shipped. Nothing here is a wishlist item; every entry cost us a design change.
 
-<!-- FILING STATUS
-     Filed: <FEEDBACK_FILING_URL>
-     Venue: Discord #feature-requests and/or the CALL-E Feedback Survey
-     Deadline: the Feedback Period closes 2026-09-18 23:45 SGT, four days after the
-     project submission deadline. An unfiled FEEDBACK.md is worth nothing to anyone.
+<!-- FILING STATUS — FILED 2026-09-06
+     CALL-E Feedback Survey: submitted 2026-09-06 via
+       https://call-e.devpost.com/details/feedback
+       (Google Form 1FAIpQLSfGWkt2F_ED6aLatQjtjBX8YEpBVQ47A39yeDd1KQRKX488Lg)
+     All four findings went in the "bugs or issues" field, the two documentation-shaped
+     ones also in the documentation field, and the what-worked section in "other feedback".
+
+     No confirmation URL exists. The form was submitted without a Google session, so it
+     could not send a response receipt — and signing in was not possible: the form's
+     "Login ke Google" link embeds the entire pre-filled response in its continue=
+     parameter, which at ~10KB exceeds Google's URL limit and returns HTTP 400. Submission
+     itself is unaffected; only the receipt is.
+
+     Also posted to Discord #support, as the form requests:
+       https://discord.com/channels/1493880186826133504/1546014799350206464
+
+     Deadline was 2026-09-18 23:45 SGT. Filed 12 days early.
 -->
 
 ---
