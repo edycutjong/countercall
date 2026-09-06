@@ -42,7 +42,39 @@ console.log(`  source             ${office.source_url} (checked ${office.source_
 if (process.env.CALLE_API_KEY && process.env.COUNTERCALL_GOAL_ID) {
   const { CalleClient } = await import('@call-e/calle');
   const client = new CalleClient({ apiKey: process.env.CALLE_API_KEY });
-  const goal = await client.goals.get(process.env.COUNTERCALL_GOAL_ID);
+
+  /*
+   * A Goal that exists but is not runnable is an ordinary, foreseeable state — a draft, a
+   * paused Goal, a retired one — and preflight is the tool whose entire job is to say so
+   * before anything dials. It used to let the SDK error escape, so `goal_not_executable`
+   * arrived as an unhandled rejection and a stack trace. A tool that argues for honest,
+   * terminal failure does not get to crash on the most likely one.
+   *
+   * 409 and 404 are told apart deliberately: 409 means the Goal is yours and not executable,
+   * 404 means no Goal by that id is visible to this key at all — a different fix each time.
+   */
+  let goal;
+  try {
+    goal = await client.goals.get(process.env.COUNTERCALL_GOAL_ID);
+  } catch (err) {
+    const status = err?.status ?? err?.statusCode;
+    console.log('  contract           CANNOT READ THE GOAL');
+    console.log('');
+    if (status === 409) {
+      console.log(`REFUSING TO DIAL. Goal ${process.env.COUNTERCALL_GOAL_ID} exists but is not`);
+      console.log('executable — it is almost certainly still a DRAFT. Publish it in CALL-E Chat,');
+      console.log('then re-run this. Draft, paused and retired Goals are invisible to goals.list');
+      console.log('and refuse goals.get, by design.');
+    } else if (status === 404) {
+      console.log(`REFUSING TO DIAL. No Goal ${process.env.COUNTERCALL_GOAL_ID} is visible to this`);
+      console.log('API key. Goals are owner-scoped: check the id, and check the key belongs to the');
+      console.log('same account that published it. Cross-owner reads return 404, not 403.');
+    } else {
+      console.log(`REFUSING TO DIAL. goals.get failed: ${status ?? '?'} ${err?.code ?? ''} ${err?.message ?? err}`);
+    }
+    process.exit(4);
+  }
+
   const drift = diffContract(PINNED, publishedRunSpec(goal));
   if (drift.length) {
     console.log('  contract           DRIFT DETECTED');
