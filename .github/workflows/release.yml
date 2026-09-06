@@ -90,5 +90,13 @@ jobs:
           git push origin HEAD:main
           git tag -a "${{ steps.ver.outputs.next }}" -m "${{ steps.ver.outputs.next }}"
           git push origin "${{ steps.ver.outputs.next }}"
+
+          # A push made with the default GITHUB_TOKEN does NOT trigger workflows — GitHub
+          # blocks that to prevent recursion. So the stamp commit lands with the new version
+          # in web/ and Pages never rebuilds, and the site stays one release behind until
+          # some later human commit happens to deploy it. Removing [skip ci] was necessary
+          # and not sufficient; the deploy has to be asked for by name.
+          gh workflow run pages.yml --ref main
+          echo "Requested a Pages deploy for ${{ steps.ver.outputs.next }}." 
           gh release create "${{ steps.ver.outputs.next }}" \
             --generate-notes --title "${{ steps.ver.outputs.next }}"
