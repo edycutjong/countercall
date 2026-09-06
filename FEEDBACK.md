@@ -1,6 +1,6 @@
 # Feedback to the CALL-E team
 
-Four findings from building **CounterCall** — an Agent Skill that phones an Indonesian
+Five findings from building **CounterCall** — an Agent Skill that phones an Indonesian
 government counter and returns a validated checklist of what to bring — against the Goals API
 between 2026-08-19 and 2026-09-03.
 
@@ -151,6 +151,39 @@ failures reported in the same thread were never explained.
 one-liner. During a hackathon it is load-bearing information.
 
 ---
+
+## 5. Publishing a Goal is chat-only, and the chat has an LLM quota that blocks shipping
+
+**Severity: high — it is a hard block with no fallback.** Added 2026-09-06, after the survey was
+filed. This is finding 2 in its complete form, with every surface now enumerated rather than
+inferred from the docs.
+
+A Goal can only be published by the conversational agent in CALL-E Chat. We checked all four
+places a publish action could live:
+
+| surface | can it publish? |
+|---|---|
+| Developer API | No. Eight operations exist and Goals are read-or-run only: `GET /v1/goals`, `GET /v1/goals/{id}`, `POST /v1/goals/{id}/runs`, `GET .../runs/{id}`. There is no `POST /v1/goals`. |
+| MCP | No. The authorized CLI lists four tools: `plan_call`, `run_call`, `get_call_run`, `track_ui_events`. |
+| Goal detail page | No action. It only says "This Goal is a draft. Publish it before running these examples." |
+| Goal card `⋯` menu | **Edit and Delete only.** |
+
+So publication is reachable exclusively through an LLM-backed agent — and that agent returns
+
+> This account has reached its LLM usage limit. Please try again after the quota window resets.
+
+on every turn, including the first prompt of a fresh session. Our account balance was **$10.95**
+with **$0.05 of lifetime usage** at the time, so this is not a credit problem. The Goal
+(`goal_6mi7m565agdr`) was created, a run spec was generated and reported `status: active`, and
+it is still stuck in Draft. `goals.get` returns `409 goal_not_executable`.
+
+The consequence is that a rate limit on a chat product becomes a hard block on shipping, with
+no API, no CLI and no UI path around it. For a hackathon entrant that is the difference between
+submitting and not.
+
+**What would help,** in order of cost: expose publication as a plain UI action on the Goal
+detail page — it needs no language model, only a state change; or exempt Goal publication from
+the chat LLM quota; or add `POST /v1/goals` and let the API do it.
 
 ## What we would say about the parts that worked
 
