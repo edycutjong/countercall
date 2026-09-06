@@ -78,6 +78,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(11,15,20,.82);
     backdrop-filter:saturate(150%) blur(14px);-webkit-backdrop-filter:saturate(150%) blur(14px);
     border-bottom:1px solid transparent;transition:border-color .25s}
 nav.stuck{border-bottom-color:var(--line)}
+/* The read-progress line is the thesis at page scale: steel until something is
+   established, amber once it is. Decoration that argues. */
+#prog{position:absolute;left:0;bottom:-1px;height:2px;width:0;
+      background:linear-gradient(90deg,var(--color-primary),var(--color-accent));
+      transition:width .12s linear;pointer-events:none}
+@media(prefers-reduced-motion:reduce){#prog{transition:none}}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;
           padding-top:14px;padding-bottom:14px;gap:16px}
 .mark{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.025em;
@@ -214,7 +220,7 @@ footer a:hover{color:var(--accent)}
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
-<nav id="nav"><div class="wrap">
+<nav id="nav"><div id="prog"></div><div class="wrap">
   <a class="mark" href="#top"><img src="icon.svg" alt="" width="26" height="26">CounterCall</a>
   <span class="links">
     <a href="#how" class="hide-sm">How</a>
@@ -331,8 +337,8 @@ footer a:hover{color:var(--accent)}
   <div class="stats rv" id="stats">
     <div><div class="n" data-count="234">234</div><div class="l">tests, no credentials needed</div></div>
     <div><div class="n" data-count="11520">11,520</div><div class="l">contract cases verified</div></div>
-    <div><div class="n">8 / 8</div><div class="l">CALL-E error codes routed</div></div>
-    <div><div class="n amber">0</div><div class="l">values invented, by construction</div></div>
+    <div><div class="n" data-count="8" data-suffix=" / 8">8 / 8</div><div class="l">CALL-E error codes routed</div></div>
+    <div><div class="n amber" data-count="0">0</div><div class="l">values invented, by construction</div></div>
   </div>
 </div></section>
 
@@ -433,7 +439,15 @@ footer a:hover{color:var(--accent)}
   /* ── Sticky nav hairline ─────────────────────────────────────── */
   var nav = document.getElementById('nav');
   function onScroll(){ nav.classList.toggle('stuck', window.scrollY > 8); }
-  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+  var prog = document.getElementById('prog');
+  function onProgress(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    prog.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+  }
+  window.addEventListener('scroll', function(){ onScroll(); onProgress(); }, {passive:true});
+  window.addEventListener('resize', onProgress, {passive:true});
+  onScroll(); onProgress();
 
   /* ── Hero mechanism: rows fill one at a time, the last never does ── */
   var mech = document.getElementById('mech');
@@ -474,12 +488,14 @@ footer a:hover{color:var(--accent)}
   function countUp(){
     stats.querySelectorAll('[data-count]').forEach(function(el){
       var target = parseInt(el.dataset.count, 10);
-      if (reduce){ el.textContent = target.toLocaleString('en-US'); return; }
+      var suffix = el.dataset.suffix || '';
+      // A zero that counts up from zero is a no-op that reads as a bug; leave it be.
+      if (reduce || target === 0){ el.textContent = target.toLocaleString('en-US') + suffix; return; }
       var start = performance.now(), dur = 900;
       (function step(now){
         var t = Math.min(1, (now - start) / dur);
         var eased = 1 - Math.pow(1 - t, 3);
-        el.textContent = Math.round(target * eased).toLocaleString('en-US');
+        el.textContent = Math.round(target * eased).toLocaleString('en-US') + suffix;
         if (t < 1) requestAnimationFrame(step);
       })(start);
     });

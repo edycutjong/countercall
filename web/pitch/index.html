@@ -194,6 +194,25 @@ p{font-size:22px;line-height:1.5;color:var(--text-mid);max-width:60ch}
                100%{background:var(--color-accent);opacity:1}}
 
 /* ── Chrome ──────────────────────────────────────────────────────── */
+/* Progress rail — same steel-to-amber gesture the landing page uses, so the deck and
+   the site read as one system rather than two designs. */
+#rail{position:fixed;left:0;top:0;height:2px;width:100%;background:rgba(110,140,168,.16);z-index:60}
+#rail i{display:block;height:100%;width:0;
+        background:linear-gradient(90deg,var(--color-primary),var(--color-accent));
+        transition:width .35s cubic-bezier(.2,.8,.2,1)}
+/* Nothing on screen said the arrow keys work. This says it once, then gets out of the way. */
+#hint{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:60;
+      font-family:var(--font-mono);font-size:13px;color:var(--text-low);
+      background:rgba(11,15,20,.82);border:1px solid rgba(110,140,168,.22);
+      border-radius:999px;padding:8px 16px;
+      opacity:0;animation:hintIn .5s .6s forwards, hintOut .6s 6s forwards;pointer-events:none}
+@keyframes hintIn{to{opacity:1}}
+@keyframes hintOut{to{opacity:0;visibility:hidden}}
+body.presenting #hint,body.overview #hint{display:none}
+@media(prefers-reduced-motion:reduce){
+  #rail i{transition:none}
+  #hint{animation:none;opacity:1}
+}
 #counter{position:fixed;right:34px;bottom:26px;font-family:var(--font-mono);
       font-size:14px;color:var(--text-low);z-index:60}
 #ver{position:fixed;left:34px;bottom:26px;font-family:var(--font-mono);
@@ -230,7 +249,7 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
 }
 @media print{
   html,body{overflow:visible;background:#fff;height:auto}
-  #counter,#ver,#notes,#grid{display:none!important}
+  #counter,#ver,#notes,#grid,#rail,#hint{display:none!important}
   #stage{position:static;width:auto;height:auto;transform:none!important}
   .slide{display:flex!important;position:relative;page-break-inside:avoid;
          break-inside:avoid;page-break-after:always;break-after:page;
@@ -240,6 +259,8 @@ body.debug-contrast .k,body.debug-contrast .n,body.debug-contrast .l{
 </style>
 </head>
 <body>
+<div id="rail"><i></i></div>
+<div id="hint">← → to move · Esc for the grid · P to present</div>
 
 <div id="stage">
 
@@ -530,6 +551,8 @@ QR code<br>pending
     slides.forEach(function(s,k){ s.classList.toggle('on', k===i); });
     document.getElementById('counter').textContent = pad(i+1)+' / '+pad(slides.length);
     document.getElementById('notes-body').textContent = slides[i].dataset.notes || '';
+    document.querySelector('#rail i').style.width =
+      ((i + 1) / slides.length * 100) + '%';
   }
 
   function buildGrid(){
