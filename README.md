@@ -178,7 +178,7 @@ and authored only in CALL-E Chat, so what this repo publishes for the community 
 |---|---|
 | Tests | **234**, passing, no credentials required |
 | Contract cases exhaustively verified | **11,520** |
-| Live CALL-E integration tests | **12** — real API reads, skipped loudly without a key |
+| Live CALL-E integration tests | **7** — real API reads, skipped loudly without a key |
 | CALL-E error codes routed | **8 of 8** in the published schema |
 | Runtime dependencies | **1** (`@call-e/calle`) |
 | CI pipeline | 6 stages, parallel, with concurrency control |
@@ -255,7 +255,7 @@ npm run test:coverage # coverage report
 npm run ci            # lint + test + audit
 
 # ── CALL-E ──────────────────────────────────
-CALLE_API_KEY=... npm test     # + 12 live reads (no call placed, no credit spent)
+CALLE_API_KEY=... npm test     # + 7 live reads (no call placed, no credit spent)
 npm run bench -- --plan        # print the call plan, dial nothing
 make security-scan             # npm audit + licenses + gitleaks over full history
 ```

@@ -42,7 +42,7 @@ Verifiable numbers only. Anything not yet measured is marked as such rather than
 | Tests | **234**, passing, no credentials required |
 | Contract cases exhaustively verified | **11,520** (see below) |
 | CALL-E `GoalRunError` codes routed | **8 of 8** in the published schema |
-| Live CALL-E integration tests | **12** — real API reads, skipped loudly without a key |
+| Live CALL-E integration tests | **7** — real API reads, skipped loudly without a key |
 | Runtime dependencies | **1** (`@call-e/calle`) |
 
 <!-- PENDING — fill from `npm run bench -- --report` after the live bench:
