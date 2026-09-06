@@ -27,9 +27,12 @@ describe('regressions — CALL-E integration', () => {
     // Defect: call.mjs used `goals.run(goalId, {target, ...})`. The SDK takes a single
     // RunGoalInput object with a top-level `phone`; CreateGoalRunRequest is closed and
     // rejects a target wrapper. The first live call would have thrown.
-    const source = readFileSync(`${ROOT}skills/countercall/scripts/call.mjs`, 'utf8');
-    assert.ok(!/goals\.run\(\s*request\.goalId\s*,/.test(source), 'positional run() signature is back');
-    assert.ok(/goals\.run\(request\)/.test(source), 'run() must take the single input object');
+    // The call site moved to transport.mjs when the Calls transport landed; the defect it
+    // pins did not move, so the assertion follows the code rather than being retired.
+    const source = readFileSync(`${ROOT}skills/countercall/scripts/transport.mjs`, 'utf8');
+    assert.ok(!/goals\.run\(\s*\w+\s*,/.test(source), 'positional run() signature is back');
+    assert.ok(/goals\.run\(\{/.test(source), 'run() must take the single input object');
+    assert.ok(/phone: office\.phone_e164/.test(source), 'phone must be top level on RunGoalInput');
     assert.ok(!/target:/.test(source), 'CreateGoalRunRequest has no target wrapper');
   });
 

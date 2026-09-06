@@ -25,22 +25,54 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { diffContract, publishedRunSpec, parseArgs } from '../skills/countercall/scripts/_lib.mjs';
-import { CONTRACT, contractFields } from '../skills/countercall/scripts/contract.mjs';
+import { CONTRACT, contractFields, resultSchemaJSON } from '../skills/countercall/scripts/contract.mjs';
 
 const EXIT = { OK: 0, EMPTY: 3, AUTH: 4, TRANSPORT: 5, DRIFT: 6, UNKNOWN: 1 };
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const args = parseArgs(process.argv.slice(2));
 
-/** Every CALL-E surface this build integrates, and where. */
-const SURFACES = [
+/**
+ * Every CALL-E surface this build integrates, and where.
+ *
+ * Grouped by transport, because which ones are REACHABLE depends on whether a Goal has been
+ * published. Reporting a Goals-only surface as live while the catalogue is empty is exactly
+ * the kind of claim this script exists to prevent.
+ */
+const SHARED_SURFACES = [
+  ['Idempotency-Key', 'skills/countercall/scripts/_lib.mjs', 'one call per office, per procedure, per day — on both transports'],
+  ['result contract', 'skills/countercall/scripts/contract.mjs', 'one pinned shape, validated locally whichever transport returned it'],
+  ['failure codes', 'skills/countercall/scripts/render.mjs', 'every published code routed to a distinct, honest outcome'],
+];
+
+const GOALS_SURFACES = [
   ['goals.list', 'scripts/verify_calle.mjs', 'discovers the published procedure catalogue'],
   ['goals.get', 'skills/countercall/scripts/preflight.mjs', 'reads the live pinned contract before every dial'],
-  ['goals.run', 'skills/countercall/scripts/call.mjs', 'places the call with a business-stable Idempotency-Key'],
-  ['goals.waitForResult', 'skills/countercall/scripts/call.mjs', 'polls to a validated result or a terminal error'],
-  ['Idempotency-Key', 'skills/countercall/scripts/_lib.mjs', 'one call per office, per procedure, per day'],
+  ['goals.run', 'skills/countercall/scripts/transport.mjs', 'places the call with a business-stable Idempotency-Key'],
+  ['goals.waitForResult', 'skills/countercall/scripts/transport.mjs', 'polls to a validated result or a terminal error'],
   ['result_schema drift guard', 'skills/countercall/scripts/_lib.mjs', 'refuses the dial when the published contract moves'],
-  ['GoalRunError.code', 'skills/countercall/scripts/render.mjs', 'all 8 published codes routed to distinct outcomes'],
 ];
+
+const CALLS_SURFACES = [
+  ['calls.create', 'skills/countercall/scripts/transport.mjs', 'places the call, carrying the contract as a request-scoped result_schema'],
+  ['calls.waitForResult', 'skills/countercall/scripts/transport.mjs', 'polls to a terminal CallTask'],
+  ['resultSchemaJSON()', 'skills/countercall/scripts/contract.mjs', 'emits the schema from CONTRACT, so sent and validated cannot diverge'],
+  ['structuredResult', 'skills/countercall/scripts/transport.mjs', 'null on a connected call means unextractable, not empty — mapped to a terminal code'],
+];
+
+function reportSurfaces(report, groups) {
+  console.log('');
+  console.log('  CALL-E surfaces in this build');
+  console.log('  ' + '-'.repeat(66));
+  for (const [group, surfaces, reachable] of groups) {
+    console.log(`  [${group}] ${reachable}`);
+    for (const [name, where, why] of surfaces) {
+      console.log(`  ${name.padEnd(28)} ${where}`);
+      console.log(`  ${''.padEnd(28)} ${why}`);
+      report.surfaces.push({ name, where, why, group });
+    }
+    console.log('');
+  }
+}
 
 function line(label, value) {
   console.log(`  ${label.padEnd(24)} ${value}`);
@@ -79,13 +111,42 @@ async function main() {
   report.roundTripMs = Math.round(ms);
 
   if (goals.length === 0) {
+    /*
+     * An empty catalogue is not a dead end any more.
+     *
+     * Publishing a Goal is reachable only through CALL-E Chat (FEEDBACK.md finding 5) and
+     * CALL-E suspended account logins after a security incident on 2026-09-02, so the
+     * catalogue may stay empty through no action of ours. The Calls transport needs none of
+     * that — it carries the contract with the request — so what this script verifies here is
+     * the path the skill will actually run, not the one we wish were available.
+     */
+    const schema = resultSchemaJSON();
     console.log('');
-    console.log('The catalogue is EMPTY. Goals are authored and published in CALL-E Chat —');
-    console.log('publishing is deliberately not a Developer API operation, and the key is');
-    console.log('owner-scoped. Until one Goal is published, goals.get and goals.run have');
-    console.log('nothing to target, and this script cannot verify a contract that does not');
-    console.log('exist yet. That is a real state, not a failure.');
-    return EXIT.EMPTY;
+    console.log('The Goal catalogue is EMPTY, so the skill runs on the CALLS transport.');
+    console.log('');
+    line('Transport', 'calls — no published Goal required');
+    line('Contract', `request-scoped, pinned v${CONTRACT.version}`);
+    line('Schema fields', `${Object.keys(schema.properties).length} (${schema.required.length} required)`);
+    line('additionalProperties', String(schema.additionalProperties));
+    line('Drift risk', 'none — schema is generated from the same CONTRACT that validates the reply');
+
+    report.transport = 'calls';
+    report.runtimeSchema = schema;
+    report.drift = [];
+
+    reportSurfaces(report, [
+      ['shared', SHARED_SURFACES, 'exercised on every call'],
+      ['calls', CALLS_SURFACES, 'ACTIVE — this is the live path'],
+      ['goals', GOALS_SURFACES, 'implemented and tested, unreachable until a Goal is published'],
+    ]);
+
+    console.log('  Verified against the live service. No call was placed.');
+    console.log('');
+    console.log('  Why the Goals path is dark: publishing a Goal exists only in CALL-E Chat —');
+    console.log('  there is no POST /v1/goals, no MCP publish tool and no button on the Goal');
+    console.log('  detail page. CALL-E suspended account logins on 2026-09-02 after a security');
+    console.log('  incident. The code for that path ships and is tested; it has no Goal to target.');
+    return EXIT.OK;
   }
 
   if (!goalId) {
@@ -123,16 +184,13 @@ async function main() {
   line('result fields', contractFields().join(', '));
 
   // 3 — the surface inventory, reported honestly
-  console.log('');
-  console.log('  CALL-E surfaces in this build');
-  console.log('  ' + '-'.repeat(66));
-  for (const [name, where, why] of SURFACES) {
-    console.log(`  ${name.padEnd(28)} ${where}`);
-    console.log(`  ${''.padEnd(28)} ${why}`);
-    report.surfaces.push({ name, where, why });
-  }
+  report.transport = 'goals';
+  reportSurfaces(report, [
+    ['shared', SHARED_SURFACES, 'exercised on every call'],
+    ['goals', GOALS_SURFACES, 'ACTIVE — this is the live path'],
+    ['calls', CALLS_SURFACES, 'implemented and tested, the fallback when no Goal is published'],
+  ]);
 
-  console.log('');
   console.log('  Verified against the live service. No call was placed.');
   return EXIT.OK;
 }

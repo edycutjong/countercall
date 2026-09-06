@@ -13,6 +13,8 @@ import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { CONTRACT } from '../skills/countercall/scripts/contract.mjs';
+
 const run = promisify(execFile);
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const FIXTURE = 'test/fixtures/offices.test.json';
@@ -49,13 +51,56 @@ describe('call.mjs is dry by default', () => {
     assert.ok(stdout.includes('no call placed'));
   });
 
-  test('the dry run prints the exact request, with phone at the top level', async () => {
+  test('the goals dry run prints the exact request, with phone at the top level', async () => {
+    const { stdout } = await cli(CALL, [
+      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+      '--transport', 'goals',
+    ]);
+    const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+    assert.equal(request.transport, 'goals');
+    assert.equal(request.phone, '+622112345678');
+    assert.ok(!('target' in request), 'CreateGoalRunRequest has no target wrapper');
+  });
+
+  test('the calls dry run carries the number in recipients, not a phone field', async () => {
+    const { stdout } = await cli(CALL, [
+      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+      '--transport', 'calls',
+    ]);
+    const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+    assert.equal(request.transport, 'calls');
+    assert.deepEqual(request.recipients, [{ phones: ['+622112345678'] }]);
+    assert.ok(!('phone' in request), 'CreateCallInput takes recipients, not a bare phone');
+  });
+
+  test('the calls dry run ships the pinned contract as the request-scoped schema', async () => {
+    const { stdout } = await cli(CALL, [
+      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+      '--transport', 'calls',
+    ]);
+    const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+    // The schema is what makes the Calls transport safe: without it CALL-E returns prose.
+    assert.equal(request.resultSchema.additionalProperties, false);
+    assert.deepEqual(
+      Object.keys(request.resultSchema.properties).sort(),
+      [...CONTRACT.required, ...CONTRACT.optional].sort(),
+    );
+  });
+
+  test('with no Goal configured, the default transport is calls', async () => {
     const { stdout } = await cli(CALL, [
       '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
     ]);
-    const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
-    assert.equal(request.phone, '+622112345678');
-    assert.ok(!('target' in request), 'CreateGoalRunRequest has no target wrapper');
+    assert.ok(stdout.includes('Transport: calls'));
+  });
+
+  test('a Goal id in the environment selects the goals transport', async () => {
+    const { stdout } = await cli(
+      CALL,
+      ['--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor'],
+      { COUNTERCALL_GOAL_ID: 'goal_present' },
+    );
+    assert.ok(stdout.includes('Transport: goals'));
   });
 
   test('the dry-run request carries a business-stable idempotency key', async () => {
@@ -66,12 +111,30 @@ describe('call.mjs is dry by default', () => {
     assert.match(request.idempotencyKey, /^countercall:fixture-sourced:perpanjangan-paspor:\d{4}-\d{2}-\d{2}:v1$/);
   });
 
-  test('the dry-run request sends no personal data as variables', async () => {
+  test('the goals dry-run request sends no personal data as variables', async () => {
     const { stdout } = await cli(CALL, [
       '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+      '--transport', 'goals',
     ]);
     const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
     assert.deepEqual(Object.keys(request.variables).sort(), ['city', 'office_name', 'procedure']);
+  });
+
+  test('the calls dry-run request sends no personal data in metadata or task', async () => {
+    const { stdout } = await cli(CALL, [
+      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+      '--transport', 'calls',
+    ]);
+    const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+    assert.deepEqual(
+      Object.keys(request.metadata).sort(),
+      ['city', 'office_id', 'office_name', 'procedure'],
+    );
+    // The task is free text and therefore the one place caller data could leak into a
+    // request. It is composed only from the office record, so it must instruct the agent to
+    // refuse personal data rather than carry any.
+    assert.ok(request.task.includes('do not ask for'));
+    assert.ok(request.task.includes('personal data'));
   });
 
   test('the dry run names the number it would ring, so a mistake is visible first', async () => {
@@ -130,14 +193,37 @@ describe('call.mjs refuses to dial', () => {
     assert.ok(stderr.includes('CALLE_API_KEY'));
   });
 
-  test('--live with a key but no published Goal fails closed', async () => {
+  /*
+   * This case used to run `--live` with a key and no Goal id and assert exit 4. That worked
+   * only because the Goals transport needed a SECOND credential, which happened to act as an
+   * interlock. It was never a designed safety property, and once the Calls transport landed —
+   * a key alone is sufficient there — the same test began making a real network request to
+   * the CALL-E API with a junk key. It never dialled anyone, but this file's own header says
+   * no test here may pass `--live`, and that rule exists precisely so a future edit cannot
+   * turn a unit test into a phone call.
+   *
+   * The boundary is now asserted where it actually lives: the goals transport, named
+   * explicitly, still refuses without its Goal id, and it refuses BEFORE constructing a
+   * client, so nothing leaves the machine.
+   */
+  test('--live on the goals transport with no Goal id fails closed', async () => {
     const { code, stderr } = await cli(
       CALL,
-      ['--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'paspor', '--live'],
+      ['--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'paspor',
+        '--live', '--transport', 'goals'],
       { CALLE_API_KEY: 'sk-not-a-real-key' },
     );
     assert.equal(code, 4);
     assert.ok(stderr.includes('COUNTERCALL_GOAL_ID'));
+  });
+
+  test('an unknown --transport is rejected instead of falling back to a default', async () => {
+    const { code, stderr } = await cli(CALL, [
+      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'paspor',
+      '--transport', 'goalz',
+    ]);
+    assert.equal(code, 2);
+    assert.ok(stderr.includes('must be "goals" or "calls"'));
   });
 });
 
@@ -157,11 +243,27 @@ describe('preflight.mjs places no call and needs no credentials', () => {
     assert.ok(stdout.includes('No call was placed'));
   });
 
-  test('the contract check is skipped, not failed, without credentials', async () => {
-    const { stdout } = await cli(PREFLIGHT, [
-      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
-    ]);
+  test('the goals contract check is skipped, not failed, without credentials', async () => {
+    const { code, stdout } = await cli(
+      PREFLIGHT,
+      ['--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor'],
+      { COUNTERCALL_TRANSPORT: 'goals' },
+    );
+    assert.equal(code, 0);
     assert.ok(stdout.includes('skipped'));
+  });
+
+  test('the calls contract check needs no credentials and no published Goal', async () => {
+    const { code, stdout } = await cli(
+      PREFLIGHT,
+      ['--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor'],
+      { COUNTERCALL_TRANSPORT: 'calls' },
+    );
+    assert.equal(code, 0);
+    assert.ok(stdout.includes('transport          calls'));
+    assert.ok(stdout.includes('request-scoped'));
+    // Preflight must still say plainly that it dialled nothing.
+    assert.ok(stdout.includes('No call was placed'));
   });
 
   test('preflight refuses a placeholder number with its own exit code', async () => {

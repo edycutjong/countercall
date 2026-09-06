@@ -8,7 +8,8 @@
 import {
   validateOffice, diffContract, idempotencyKey, parseArgs, publishedRunSpec, loadOffices,
 } from './_lib.mjs';
-import { CONTRACT, contractFields } from './contract.mjs';
+import { CONTRACT, contractFields, resultSchemaJSON } from './contract.mjs';
+import { selectTransport } from './transport.mjs';
 
 const PINNED = { version: CONTRACT.version, result_fields: contractFields() };
 
@@ -38,8 +39,37 @@ if (problems.length) {
 console.log('  E.164              ok');
 console.log(`  source             ${office.source_url} (checked ${office.source_checked})`);
 
-// Contract check. Offline unless a key is present — preflight must never require credentials.
-if (process.env.CALLE_API_KEY && process.env.COUNTERCALL_GOAL_ID) {
+const transport = selectTransport();
+console.log(`  transport          ${transport.name}`);
+
+/*
+ * Contract check, per transport.
+ *
+ * On `calls` there is nothing to fetch: the schema is generated from CONTRACT and sent with
+ * the request, so what the server validates and what `validateResult` enforces come from one
+ * source and cannot disagree. The check that matters is that the emitted schema is
+ * well-formed and covers every pinned field — a silently truncated schema would let CALL-E
+ * return a partial object the card would then render.
+ */
+if (transport.name === 'calls') {
+  const schema = resultSchemaJSON();
+  const emitted = Object.keys(schema.properties);
+  const missing = contractFields().filter((f) => !emitted.includes(f));
+  const unrequired = CONTRACT.required.filter((f) => !schema.required.includes(f));
+
+  if (missing.length || unrequired.length || schema.additionalProperties !== false) {
+    console.log('  contract           EMITTED SCHEMA IS WRONG');
+    for (const f of missing) console.log(`                     - not emitted: ${f}`);
+    for (const f of unrequired) console.log(`                     - not required: ${f}`);
+    if (schema.additionalProperties !== false)
+      console.log('                     - additionalProperties is not false');
+    console.log('');
+    console.log('REFUSING TO DIAL. The request-scoped schema does not match the pinned contract.');
+    process.exit(4);
+  }
+  console.log(`  contract           request-scoped, v${CONTRACT.version}, ${emitted.length} fields`);
+  console.log('                     no published Goal needed — the schema travels with the call');
+} else if (process.env.CALLE_API_KEY && process.env.COUNTERCALL_GOAL_ID) {
   const { CalleClient } = await import('@call-e/calle');
   const client = new CalleClient({ apiKey: process.env.CALLE_API_KEY });
 

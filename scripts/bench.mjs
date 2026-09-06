@@ -8,7 +8,7 @@
  *       Print the call plan and stop. Places nothing, spends nothing.
  *
  *   node scripts/bench.mjs --live --calls 20
- *       Place real Goal Runs, one per office/procedure pair, honouring the one-call-per-
+ *       Place real calls, one per office/procedure pair, honouring the one-call-per-
  *       office-per-procedure-per-day rule. Appends every record to bench/records.json.
  *
  *   node scripts/bench.mjs --report
@@ -25,6 +25,7 @@ import { relative } from 'node:path';
 
 import { parseArgs, validateOffice, idempotencyKey, loadOffices } from '../skills/countercall/scripts/_lib.mjs';
 import { validateResult } from '../skills/countercall/scripts/contract.mjs';
+import { selectTransport, missingCredentials } from '../skills/countercall/scripts/transport.mjs';
 import { summarize, toMarkdown } from './bench_stats.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -99,14 +100,25 @@ if (!args.live) {
 
 // ---------------------------------------------------------------- live
 
-if (!process.env.CALLE_API_KEY || !process.env.COUNTERCALL_GOAL_ID) {
-  console.error('--live requires CALLE_API_KEY and COUNTERCALL_GOAL_ID.');
+// Same transport selection as call.mjs, so the benchmark measures the path the skill
+// actually runs rather than a second one that drifts from it.
+const transport = selectTransport();
+const missing = missingCredentials(transport);
+if (missing.length) {
+  console.error(`--live on the ${transport.name} transport requires ${missing.join(' and ')}.`);
   process.exit(4);
 }
 
 const { CalleClient } = await import('@call-e/calle');
 const client = new CalleClient({ apiKey: process.env.CALLE_API_KEY });
-const goalId = process.env.COUNTERCALL_GOAL_ID;
+try {
+  await transport.assertReady(client);
+} catch (error) {
+  console.error(`REFUSING TO DIAL: ${error.message}`);
+  for (const d of error.drift ?? []) console.error(`  - ${d}`);
+  process.exit(4);
+}
+console.log(`transport: ${transport.name}`);
 const records = loadRecords();
 const today = new Date(Date.now()).toISOString().slice(0, 10);
 
@@ -126,23 +138,20 @@ for (const { office, procedure } of pairs) {
   const started = Date.now();
   let record;
   try {
-    const run = await client.goals.run({
-      goalId,
-      phone: office.phone_e164,
-      variables: { office_name: office.name, procedure, city: office.city },
-      idempotencyKey: key,
-    });
-    const outcome = await client.goals.waitForResult(goalId, run.id);
+    const outcome = await transport.run(client, office, procedure, key);
     const elapsed = Date.now() - started;
+    const runId = outcome.runId;
 
     if (outcome.error) {
-      record = { outcome: outcome.error.code, validated: false, runId: run.id, ms: elapsed };
+      record = { outcome: outcome.error.code, validated: false, runId, ms: elapsed };
     } else {
       const invalid = validateResult(outcome.result);
       record = invalid.length
-        ? { outcome: 'result_invalid', validated: false, runId: run.id, ms: elapsed, problems: invalid }
-        : { outcome: 'result', validated: true, runId: run.id, ms: elapsed };
+        ? { outcome: 'result_invalid', validated: false, runId, ms: elapsed, problems: invalid }
+        : { outcome: 'result', validated: true, runId, ms: elapsed };
     }
+    // Which path produced the number matters when the table is read months later.
+    record.transport = transport.name;
   } catch (error) {
     record = {
       outcome: 'call_failed',

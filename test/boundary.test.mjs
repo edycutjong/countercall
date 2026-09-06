@@ -135,12 +135,41 @@ describe('permission boundary — the default path places no call', () => {
     assert.ok(stderr.includes('CALLE_API_KEY'));
   });
 
-  test('--live without a published Goal fails closed rather than dialling', async () => {
+  test('--live on the goals transport without a Goal fails closed rather than dialling', async () => {
     const { code, stderr } = await attempt(
-      ['--offices', seed(good), '--office', 'target', '--procedure', 'p', '--live'],
+      ['--offices', seed(good), '--office', 'target', '--procedure', 'p', '--live',
+        '--transport', 'goals'],
       { CALLE_API_KEY: 'sk-present' },
     );
     assert.equal(code, 4);
     assert.ok(stderr.includes('COUNTERCALL_GOAL_ID'));
+  });
+
+  /*
+   * The Calls transport needs only a key, so it does NOT inherit the two-credential
+   * interlock the Goals path had. That interlock was incidental, not designed — the real
+   * boundary has always been `--live` plus a sourced number, and these two cases assert it
+   * still holds on the transport that lost the accident.
+   */
+  test('the calls transport still will not dial without --live', async () => {
+    const { code, stdout } = await attempt(
+      ['--offices', seed(good), '--office', 'target', '--procedure', 'p', '--transport', 'calls'],
+      { CALLE_API_KEY: 'sk-present' },
+    );
+    assert.equal(code, 0);
+    assert.ok(stdout.includes('DRY RUN'));
+    assert.ok(stdout.includes('no call placed'));
+  });
+
+  test('the calls transport still will not dial an unsourced number, key or no key', async () => {
+    const unsourced = { phone_e164: '+622112345678', source_url: null, source_checked: null };
+    const { code, stderr } = await attempt(
+      ['--offices', seed(unsourced), '--office', 'target', '--procedure', 'p', '--live',
+        '--transport', 'calls'],
+      { CALLE_API_KEY: 'sk-present' },
+    );
+    assert.equal(code, 3);
+    assert.ok(stderr.includes('REFUSING TO DIAL'));
+    assert.ok(stderr.includes('no source_url'));
   });
 });
