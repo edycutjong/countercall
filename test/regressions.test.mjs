@@ -23,6 +23,23 @@ const run = promisify(execFile);
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 describe('regressions — CALL-E integration', () => {
+  test('write_and_json_flags_consumed_the_next_token_so_write_was_a_silent_noop', async () => {
+    // Defect: BOOLEAN_FLAGS listed live/plan/report but not write/json, so parseArgs treated
+    // `--write` as taking a value. With nothing after it the flag parsed as undefined, the
+    // write was skipped, and verify_live.mjs exited 0 having done nothing — while DEMO.md
+    // documented that exact command as the way to fill its verification block.
+    const { BOOLEAN_FLAGS } = await import('../skills/countercall/scripts/_lib.mjs');
+    assert.ok(BOOLEAN_FLAGS.has('write'), '--write must not swallow the next token');
+    assert.ok(BOOLEAN_FLAGS.has('json'), '--json must not swallow the next token');
+    assert.equal(parseArgs(['--write']).write, true);
+    assert.equal(parseArgs(['--json']).json, true);
+    // The trailing-flag case is the one that bit: --write followed by nothing at all.
+    assert.equal(parseArgs(['--offices', 'x.json', '--write']).offices, 'x.json');
+    assert.equal(parseArgs(['--offices', 'x.json', '--write']).write, true);
+    // And a value-taking flag after a boolean one must still get its value.
+    assert.equal(parseArgs(['--write', '--offices', 'x.json']).offices, 'x.json');
+  });
+
   test('goals_run_called_with_positional_goalId_and_target_wrapper', async () => {
     // Defect: call.mjs used `goals.run(goalId, {target, ...})`. The SDK takes a single
     // RunGoalInput object with a top-level `phone`; CreateGoalRunRequest is closed and

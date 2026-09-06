@@ -30,7 +30,7 @@
   ![CALL-E](https://img.shields.io/badge/CALL--E-Goals_API-1f6feb?style=flat)
   [![CI](https://github.com/edycutjong/countercall/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/countercall/actions/workflows/ci.yml)
   [![Release](https://img.shields.io/github/v/release/edycutjong/countercall?style=flat&color=6E8CA8)](https://github.com/edycutjong/countercall/releases)
-  ![Tests](https://img.shields.io/badge/tests-273_passing-brightgreen?style=flat)
+  ![Tests](https://img.shields.io/badge/tests-274_passing-brightgreen?style=flat)
   [![License](https://img.shields.io/badge/License-MIT-yellow)](https://opensource.org/licenses/MIT)
 
 </div>
@@ -107,12 +107,17 @@ graph TD
     A[User picks office + procedure] --> B[preflight.mjs]
     B -->|E.164 + published source| C{Number valid?}
     C -->|no| R[REFUSE — never infer a number]
-    C -->|yes| D[goals.get — read live contract]
+    C -->|yes| T{Published Goal available?}
+    T -->|yes| D[goals.get — read live contract]
+    T -->|no| S[send contract as request-scoped result_schema]
     D --> E{Drift vs pinned contract?}
     E -->|yes| R2[REFUSE — re-pin before dialling]
     E -->|no| F[goals.run + Idempotency-Key]
+    S --> F2[calls.create + Idempotency-Key]
     F --> G[goals.waitForResult]
+    F2 --> G2[calls.waitForResult]
     G --> H{result or error?}
+    G2 --> H
     H -->|error| I[renderFailure — honest, terminal]
     H -->|result| J[validateResult vs pinned schema]
     J -->|invalid| I
@@ -124,9 +129,9 @@ graph TD
     classDef stop fill:#2A1719,stroke:#FF6B6B,stroke-width:1.5px,color:#FF8F8F
     classDef ev   fill:#2B2517,stroke:#F2B33D,stroke-width:2.5px,color:#F2B33D
 
-    class A,B,D,G flow
-    class C,E,H,J dec
-    class F ring
+    class A,B,D,G,S,G2 flow
+    class C,E,H,J,T dec
+    class F,F2 ring
     class R,R2,I stop
     class K ev
 
@@ -138,7 +143,7 @@ graph TD
 
 | Layer | Technology |
 |---|---|
-| **Voice + extraction** | CALL-E Goals API (`@call-e/calle` 0.7.0) |
+| **Voice + extraction** | CALL-E Goals API *and* Calls API (`@call-e/calle` 0.7.0) |
 | **Runtime** | Node ≥ 20, ESM, one runtime dependency |
 | **Contract** | Pinned `result_schema`, `additionalProperties: false`, drift guard |
 | **Distribution** | Agent Skill package (`skills/countercall/`) |
@@ -150,33 +155,62 @@ Delete CALL-E and there is no project. There is no scraped-website fallback and 
 requirements database — deliberately. The entire value is that a **phone call happened** and
 a human answered.
 
-Four Goals API methods are load-bearing:
+CounterCall integrates **two** CALL-E APIs behind one interface
+([`transport.mjs`](skills/countercall/scripts/transport.mjs)), because the better one is not
+always reachable. Both place a real outbound call and both return the same validated shape.
+
+**Goals transport** — the published Goal owns the schema.
 
 | Method | Role | Code |
 |---|---|---|
 | `goals.list` | Discovers the published procedure catalogue — the reuse mechanism itself | `scripts/verify_calle.mjs` |
 | `goals.get` | Reads the live pinned `input_schema` / `result_schema` before every dial | `skills/countercall/scripts/preflight.mjs` |
-| `goals.run` | Places the call, with a required business-stable `Idempotency-Key` | `skills/countercall/scripts/call.mjs` |
-| `goals.waitForResult` | Polls to a validated result or a terminal `GoalRunError` | `skills/countercall/scripts/call.mjs` |
+| `goals.run` | Places the call, with a required business-stable `Idempotency-Key` | `skills/countercall/scripts/transport.mjs` |
+| `goals.waitForResult` | Polls to a validated result or a terminal `GoalRunError` | `skills/countercall/scripts/transport.mjs` |
 
-Plus two protocol surfaces doing real work rather than decorating: the pinned `result_schema`
-with `additionalProperties: false` — which turns a malformed answer into a *detectable*
-failure instead of a silently accepted wrong checklist — and `GoalRunError.code` routed
-exhaustively to eight distinct user-facing outcomes.
+**Calls transport** — the contract travels with the request.
+
+| Method | Role | Code |
+|---|---|---|
+| `calls.create` | Places the call carrying the pinned contract as a request-scoped `result_schema` | `skills/countercall/scripts/transport.mjs` |
+| `calls.waitForResult` | Polls to a terminal `CallTask` | `skills/countercall/scripts/transport.mjs` |
+| `structuredResult` | `null` on a *connected* call means the evidence could not satisfy the schema — mapped to a terminal code, never to an empty card | `skills/countercall/scripts/transport.mjs` |
+
+Plus three protocol surfaces doing real work rather than decorating: the pinned
+`result_schema` with `additionalProperties: false` — which turns a malformed answer into a
+*detectable* failure instead of a silently accepted wrong checklist — the business-stable
+`Idempotency-Key` that makes one office, one procedure, one day exactly one call on either
+transport, and failure codes routed exhaustively to distinct user-facing outcomes.
+
+### Why two transports
+
+Publishing a Goal is reachable **only** through CALL-E Chat. There is no `POST /v1/goals`, no
+MCP publish tool, and no action on the Goal detail page — all four surfaces are enumerated in
+[`FEEDBACK.md`](FEEDBACK.md) finding 5. On 2026-09-02 CALL-E suspended account logins after a
+security incident, and the single path to publishing a Goal closed with them.
+
+A demo that one vendor outage can sever is not a demo. So the Calls transport generates the
+schema from the same `CONTRACT` that validates the reply — drift is impossible by
+construction rather than merely guarded against — and needs nothing but an API key. The Goals
+transport remains the better product and ships fully tested; it activates the moment a Goal
+can be published. `scripts/verify_live.mjs` reports which path is live and why.
 
 **Honest limitations.** A Goal Run result is a flat map of scalars — no arrays, no nested
 objects, no nulls. The document checklist is therefore carried as a newline-separated string
 and decoded client-side, and the fee is an *optional* field that is simply absent when the
 clerk did not know, because `null` is not a permitted value. Both are documented in
-[`contract.mjs`](skills/countercall/scripts/contract.mjs). Separately: Goals are owner-scoped
-and authored only in CALL-E Chat, so what this repo publishes for the community is the Goal
-**specification** plus the client, not a runnable shared Goal.
+[`contract.mjs`](skills/countercall/scripts/contract.mjs). The Calls API *does* support
+arrays, and CounterCall deliberately does not use them: two result shapes would mean two
+validators and a card that could render correctly on one path and wrongly on the other.
+Separately: Goals are owner-scoped and authored only in CALL-E Chat, so what this repo
+publishes for the community is the Goal **specification** plus the client, not a runnable
+shared Goal.
 
 ## 📊 Engineering Rigor
 
 | Metric | Value |
 |---|---|
-| Tests | **273**, passing, no credentials required |
+| Tests | **274**, passing, no credentials required |
 | Contract cases exhaustively verified | **11,520** |
 | Live CALL-E integration tests | **7** — real API reads, skipped loudly without a key |
 | CALL-E error codes routed | **8 of 8** in the published schema |
@@ -230,7 +264,7 @@ it must refuse — with credentials present and `--live` requested.
 ```bash
 git clone https://github.com/edycutjong/countercall.git && cd countercall
 npm install
-npm test                                  # 273 tests, no credentials needed
+npm test                                  # 274 tests, no credentials needed
 ```
 
 Then, without placing a call:
@@ -250,7 +284,7 @@ without dialling — run `call.mjs` with the same flags. Add `--live` to actuall
 ```bash
 # ── Code Quality ────────────────────────────
 npm run lint          # eslint
-npm test              # 273 tests
+npm test              # 274 tests
 npm run test:coverage # coverage report
 npm run ci            # lint + test + audit
 
@@ -263,7 +297,7 @@ make security-scan             # npm audit + licenses + gitleaks over full histo
 | Layer | Tool | Status |
 |---|---|---|
 | Code Quality | ESLint (flat config) | ✅ |
-| Unit + Contract Testing | `node:test`, 273 tests | ✅ |
+| Unit + Contract Testing | `node:test`, 274 tests | ✅ |
 | Exhaustive Verification | 11,520 contract cases | ✅ |
 | Safety Boundary | Subprocess refuse-to-dial suite | ✅ |
 | Security (SAST) | CodeQL | ✅ |
@@ -281,7 +315,7 @@ countercall/
 │   ├── references/         # safety rules, result contract, worked examples
 │   └── scripts/            # preflight · call · contract · render · _lib
 ├── scripts/                # verify_calle · bench · bench_stats
-├── test/                   # 273 tests across 8 suites
+├── test/                   # 274 tests across 8 suites
 ├── .github/workflows/      # ci · codeql · gitleaks · release
 ├── JUDGE.md                # the 30-second judge path
 └── README.md               # you are here
@@ -289,10 +323,10 @@ countercall/
 
 ## 🗺️ Roadmap
 
-- [x] CALL-E Goals API integration — 4 load-bearing methods
+- [x] CALL-E integration — 4 Goals methods + 3 Calls surfaces, two transports, one contract
 - [x] Pinned result contract + drift guard
 - [x] Agent Skill package with dry-run-by-default CLI
-- [x] 273 tests · 11,520 exhaustively verified contract cases
+- [x] 274 tests · 11,520 exhaustively verified contract cases
 - [x] 6-stage CI/CD, CodeQL, gitleaks, Dependabot
 - [ ] Publish the Goal in CALL-E Chat and place the first real call
 - [ ] Benchmark ≥ 20 real calls, publish p50/p95 and the honest answer rate

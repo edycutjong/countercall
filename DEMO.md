@@ -53,7 +53,7 @@ you ask, you get the real thing.
 ### CI / deterministic replay — separate, and never the product
 
 ```bash
-npm test                        # 273 tests, no credentials, no network
+npm test                        # 274 tests, no credentials, no network
 npm run bench -- --report       # recompute from recorded real calls
 ```
 
@@ -86,8 +86,63 @@ lines go unanswered often. That is the premise of the skill, not a defect in it.
 
 <!-- VERIFY:START -->
 
-*Not yet run. `node scripts/verify_live.mjs --write` fills this block with the real output —
-the published Goal, its RunSpec version, and the drift check against the pinned contract.*
+```text
+CALL-E live contract verification
+---------------------------------
+  SDK                      @call-e/calle
+  Places a call?           no — reads only, costs no call credit
+
+  Authenticated            yes
+  Round trip               790 ms
+  Published Goals          0
+
+The Goal catalogue is EMPTY, so the skill runs on the CALLS transport.
+
+  Transport                calls — no published Goal required
+  Contract                 request-scoped, pinned v1
+  Schema fields            7 (6 required)
+  additionalProperties     false
+  Drift risk               none — schema is generated from the same CONTRACT that validates the reply
+
+  CALL-E surfaces in this build
+  ------------------------------------------------------------------
+  [shared] exercised on every call
+  Idempotency-Key              skills/countercall/scripts/_lib.mjs
+                               one call per office, per procedure, per day — on both transports
+  result contract              skills/countercall/scripts/contract.mjs
+                               one pinned shape, validated locally whichever transport returned it
+  failure codes                skills/countercall/scripts/render.mjs
+                               every published code routed to a distinct, honest outcome
+
+  [calls] ACTIVE — this is the live path
+  calls.create                 skills/countercall/scripts/transport.mjs
+                               places the call, carrying the contract as a request-scoped result_schema
+  calls.waitForResult          skills/countercall/scripts/transport.mjs
+                               polls to a terminal CallTask
+  resultSchemaJSON()           skills/countercall/scripts/contract.mjs
+                               emits the schema from CONTRACT, so sent and validated cannot diverge
+  structuredResult             skills/countercall/scripts/transport.mjs
+                               null on a connected call means unextractable, not empty — mapped to a terminal code
+
+  [goals] implemented and tested, unreachable until a Goal is published
+  goals.list                   scripts/verify_calle.mjs
+                               discovers the published procedure catalogue
+  goals.get                    skills/countercall/scripts/preflight.mjs
+                               reads the live pinned contract before every dial
+  goals.run                    skills/countercall/scripts/transport.mjs
+                               places the call with a business-stable Idempotency-Key
+  goals.waitForResult          skills/countercall/scripts/transport.mjs
+                               polls to a validated result or a terminal error
+  result_schema drift guard    skills/countercall/scripts/_lib.mjs
+                               refuses the dial when the published contract moves
+
+  Verified against the live service. No call was placed.
+
+  Why the Goals path is dark: publishing a Goal exists only in CALL-E Chat —
+  there is no POST /v1/goals, no MCP publish tool and no button on the Goal
+  detail page. CALL-E suspended account logins on 2026-09-02 after a security
+  incident. The code for that path ships and is tested; it has no Goal to target.
+```
 
 <!-- VERIFY:END -->
 
@@ -137,8 +192,8 @@ $ npm test
       ↳ 1296 rendered cards verified for invented values
       ↳ 8208 single-field corruptions, all rejected
       ↳ 720 unexpected-key injections, all rejected
-# tests 273
-# pass 273
+# tests 274
+# pass 274
 ```
 
 That sweep found a real defect while it was being written: an empty `clerk_quote` validated
@@ -147,13 +202,19 @@ regression test named after the defect.
 
 ## Honest limitations
 
-1. **Goals are owner-scoped.** They are authored and published in CALL-E Chat, not through the
-   Developer API, so what this repo contributes is the Goal *specification* plus the client —
-   not a runnable shared Goal you can execute against our account.
+1. **Goals are owner-scoped, and publishing one is chat-only.** There is no `POST /v1/goals`,
+   no MCP publish tool and no action on the Goal detail page — all four surfaces are
+   enumerated in [FEEDBACK.md](FEEDBACK.md) finding 5. CALL-E suspended account logins on
+   2026-09-02 after a security incident, closing that path. **This is why the shipped default
+   is the Calls transport**, which needs only an API key; the Goals transport ships fully
+   tested and activates the moment a Goal can be published. What this repo contributes is the
+   Goal *specification* plus the client, not a runnable shared Goal.
 2. **A Goal Run result is a flat map of scalars** — no arrays, no nested objects, no nulls. The
    checklist travels as a newline-separated string decoded client-side, and the fee is an
    optional field that is simply absent when the clerk did not know. See
    [`contract.mjs`](skills/countercall/scripts/contract.mjs) and [FEEDBACK.md](FEEDBACK.md).
+   The Calls API permits arrays; the scalar shape is kept on both transports on purpose, so
+   there is one validator and one card rather than two of each.
 3. **Coverage is bounded by the seed file.** CounterCall never infers a phone number — every
    office needs a human to have read the number off the office's own published page and
    recorded the date. That is a deliberate ceiling on growth, and it is the right one.

@@ -29,7 +29,7 @@ checklist, the fee, cash-or-card, and whether you need an appointment first.**
 To run it yourself, no credentials needed:
 
 ```bash
-npm install && npm test        # 273 tests
+npm install && npm test        # 274 tests
 npm run bench -- --plan        # prints the call plan; dials nothing
 ```
 
@@ -39,7 +39,7 @@ Verifiable numbers only. Anything not yet measured is marked as such rather than
 
 | | |
 |---|---|
-| Tests | **273**, passing, no credentials required |
+| Tests | **274**, passing, no credentials required |
 | Contract cases exhaustively verified | **11,520** (see below) |
 | CALL-E `GoalRunError` codes routed | **8 of 8** in the published schema |
 | Live CALL-E integration tests | **7** — real API reads, skipped loudly without a key |
@@ -74,35 +74,69 @@ regression test.
 
 ## Reproduce
 
-The real path — this places actual phone calls and spends real credit:
+First, with **no credentials at all** — this prints the exact request that would be sent,
+including the full result schema, and stops:
+
+```bash
+node skills/countercall/scripts/preflight.mjs \
+  --office imigrasi-jaksel --procedure "perpanjangan paspor"
+node skills/countercall/scripts/call.mjs \
+  --office imigrasi-jaksel --procedure "perpanjangan paspor"
+```
+
+With a key, still placing no call — this reads the live service and reports which transport
+is active and why:
 
 ```bash
 export CALLE_API_KEY=...          # Developer API key
-export COUNTERCALL_GOAL_ID=...    # the published Goal
+node scripts/verify_live.mjs
+```
+
+The real path — this places an actual phone call and spends real credit. **One export, no
+Goal required:**
+
+```bash
+export CALLE_API_KEY=...          # Developer API key — this is the only one needed
 node skills/countercall/scripts/call.mjs \
   --office imigrasi-jaksel --procedure "perpanjangan paspor" --live
 ```
+
+That runs the **Calls transport**, which carries the contract with the request. If you have
+published a Goal of your own, `export COUNTERCALL_GOAL_ID=...` and the same command runs the
+**Goals transport** against it instead — same card, same validation. `--transport goals|calls`
+forces either one.
+
+> Indonesian government counters answer roughly **Mon–Fri 08:00–15:00 WIB (UTC+7)**. Outside
+> those hours the honest outcome is `no_answer`, and that is what you will see — the tool has
+> no simulated mode to fall back on.
 
 Note the `--live` flag. It is **required to dial** — the default path prints the exact
 request and stops. That is the opposite of a demo mode: there is no flag that makes this
 project *simulate* a call, and no mocked or replayed provider anywhere in the tree.
 
 **CI / deterministic replay** (separate, and never the product):
-`npm test` runs 273 tests with no credentials. `npm run bench -- --report` recomputes the
+`npm test` runs 274 tests with no credentials. `npm run bench -- --report` recomputes the
 benchmark from recorded real calls; it refuses to render a table from zero records and has
 no seeded mode.
 
 ## Honest limitations
 
-1. **Goals are owner-scoped.** They are authored and published in CALL-E Chat, not through
-   the Developer API. So what this repo contributes to the community is the Goal
-   *specification* plus the client — not a runnable shared Goal you can execute against our
-   account. Publishing your own copy takes about two minutes.
+1. **Goals are owner-scoped, and publishing one is chat-only.** A Goal is authored and
+   published in CALL-E Chat — there is no `POST /v1/goals`, no MCP publish tool and no action
+   on the Goal detail page (all four surfaces are enumerated in [`FEEDBACK.md`](FEEDBACK.md)
+   finding 5). On 2026-09-02 CALL-E suspended account logins after a security incident, which
+   closed that path entirely. **This is why the default transport is the Calls API**: it needs
+   only a key, so the demo above works for you today. The Goals transport ships fully tested
+   and activates the moment a Goal can be published. What this repo contributes to the
+   community is the Goal *specification* plus the client, not a runnable shared Goal.
 2. **A Goal Run result is a flat map of scalars** — no arrays, no nested objects, no nulls.
    The document checklist therefore travels as a newline-separated string and is decoded
    client-side, and the fee is an optional field that is simply absent when the clerk did
    not know. This is a real constraint we designed around, documented in
-   [`contract.mjs`](skills/countercall/scripts/contract.mjs).
+   [`contract.mjs`](skills/countercall/scripts/contract.mjs). The Calls API *does* permit
+   arrays; we deliberately keep the scalar shape on both transports, because two result
+   shapes would mean two validators and a card that could render correctly on one path and
+   wrongly on the other.
 3. **Coverage is only as good as the seed file.** CounterCall never infers a phone number —
    every office requires a human to have read the number off the office's own published
    page and recorded the URL and date. That is a deliberate ceiling on growth, and it is the
