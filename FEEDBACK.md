@@ -181,6 +181,11 @@ The consequence is that a rate limit on a chat product becomes a hard block on s
 no API, no CLI and no UI path around it. For a hackathon entrant that is the difference between
 submitting and not.
 
+Reported to CALL-E 2026-09-06 in Discord #support:
+<https://discord.com/channels/1493880186826133504/1546038380448579624>
+(the first four findings are at
+<https://discord.com/channels/1493880186826133504/1546014799350206464>)
+
 **What would help,** in order of cost: expose publication as a plain UI action on the Goal
 detail page — it needs no language model, only a state change; or exempt Goal publication from
 the chat LLM quota; or add `POST /v1/goals` and let the API do it.
