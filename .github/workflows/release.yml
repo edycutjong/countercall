@@ -77,10 +77,16 @@ jobs:
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # chore(release) is deliberately a non-releasable type, so the commit this pushes
-          # computes BUMP=none on the next run and cannot start a release loop.
+          # chore(release) is deliberately a NON-RELEASABLE type: the next run computes
+          # BUMP=none from it and stops. That — not [skip ci] — is the loop guard.
+          #
+          # [skip ci] was here and it was wrong. It skips EVERY workflow, Pages included, so
+          # the commit carrying the new version stamp never deployed and the live site sat one
+          # release behind for good: repo v1.2.0, countercall.edycu.dev still showing v1.1.0.
+          # Letting the stamp commit build costs one extra CI run and is the whole point of
+          # stamping it.
           git add package.json web/index.html web/404.html web/pitch/index.html
-          git commit -m "chore(release): ${{ steps.ver.outputs.next }} [skip ci]" || echo "nothing to stamp"
+          git commit -m "chore(release): ${{ steps.ver.outputs.next }}" || echo "nothing to stamp"
           git push origin HEAD:main
           git tag -a "${{ steps.ver.outputs.next }}" -m "${{ steps.ver.outputs.next }}"
           git push origin "${{ steps.ver.outputs.next }}"
