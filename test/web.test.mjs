@@ -114,6 +114,21 @@ describe('landing page hygiene', () => {
   test('states the version this tree actually is', () => {
     assert.ok(PAGE.includes(`v${VERSION}`), `landing page does not state v${VERSION}`);
   });
+
+  /**
+   * The check above covered the landing page only, so 404.html kept saying v0.0.0-dev after
+   * v1.0.0 was tagged — and nothing caught it, because the frame that would have shown it in
+   * the gallery was rendering blank. A per-page assertion is worth little; the property is
+   * that NO published page states a version other than the real one.
+   */
+  test('no published page states a stale version', () => {
+    for (const [name, html] of [['landing', PAGE], ['404', NOTFOUND], ['deck', DECK]]) {
+      const stated = [...html.matchAll(/v(\d+\.\d+\.\d+(?:-[\w.]+)?)/g)].map((m) => m[1]);
+      for (const v of stated) {
+        assert.equal(v, VERSION, `${name} states v${v}, but package.json says v${VERSION}`);
+      }
+    }
+  });
 });
 
 describe('every published page is free of fabricated call data', () => {

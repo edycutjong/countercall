@@ -87,15 +87,24 @@ for (const rel of SURFACES) {
   const src = readFileSync(file, 'utf8');
   let fixed = src;
 
+  /*
+   * Patterns are applied to the PROGRESSIVELY EDITED text, not to the original.
+   *
+   * The previous version matched against `src` and then did
+   * `fixed.split(m[0]).join(...)`. Where two patterns overlap the same run of text — the
+   * count-up tile matches both the generic "<n> ... tests" rule and the data-count rule —
+   * the first edit made the second pattern's `m[0]` no longer present in `fixed`, so the
+   * split found nothing and the replacement silently did nothing. --fix reported success
+   * while leaving data-count="233" next to a visible 234: the exact drift this checker was
+   * added to catch.
+   */
   for (const pattern of CLAIMS) {
-    for (const m of src.matchAll(pattern)) {
-      const claimed = Number(m[1]);
-      if (claimed === actual) continue;
+    fixed = fixed.replace(pattern, (full, num) => {
+      const claimed = Number(num);
+      if (claimed === actual) return full;
       findings.push(`${rel}: claims ${claimed} tests, actual is ${actual}`);
-      if (FIX) {
-        fixed = fixed.split(m[0]).join(m[0].replace(String(claimed), String(actual)));
-      }
-    }
+      return full.replace(String(claimed), String(actual));
+    });
   }
   if (FIX && fixed !== src) writeFileSync(file, fixed);
 }
