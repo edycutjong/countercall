@@ -3,9 +3,81 @@
     "id": "imigrasi-jaksel",
     "name": "Kantor Imigrasi Kelas I Khusus Non TPI Jakarta Selatan",
     "city": "Jakarta Selatan",
-    "phone_e164": "+62XXXXXXXXXX",
-    "source_url": "https://jakartaselatan.imigrasi.go.id/",
-    "source_checked": null,
-    "procedures": ["perpanjangan paspor", "paspor baru"]
+    "phone_e164": "+622179170915",
+    "source_url": "https://jakartaselatan.imigrasi.go.id/en/tentang-kami/alamat",
+    "source_checked": "2026-09-06",
+    "phone_as_printed": "021-79170915",
+    "procedures": [
+      "perpanjangan paspor",
+      "paspor baru"
+    ]
+  },
+  {
+    "id": "imigrasi-jakpus",
+    "name": "Kantor Imigrasi Kelas I Non TPI Jakarta Pusat",
+    "city": "Jakarta Pusat",
+    "phone_e164": "+62216541213",
+    "source_url": "https://jakartapusat.imigrasi.go.id/index.php/kontak-kami",
+    "source_checked": "2026-09-06",
+    "phone_as_printed": "0216541213",
+    "procedures": [
+      "perpanjangan paspor",
+      "paspor baru"
+    ]
+  },
+  {
+    "id": "imigrasi-depok",
+    "name": "Kantor Imigrasi Kelas I Non TPI Depok",
+    "city": "Depok",
+    "phone_e164": "+622177820580",
+    "source_url": "https://depok.imigrasi.go.id/kontak-kami/",
+    "source_checked": "2026-09-06",
+    "phone_as_printed": "021-77820580",
+    "procedures": [
+      "perpanjangan paspor",
+      "paspor baru"
+    ]
+  },
+  {
+    "id": "samsat-jaksel",
+    "name": "Kantor Bersama Samsat Jakarta Selatan (UPPPKB, Bapenda DKI Jakarta)",
+    "city": "Jakarta Selatan",
+    "phone_e164": "+62215737219",
+    "source_url": "https://bapenda.jakarta.go.id/pelayanan/upt-pkb-dan-bbnkb-samsat",
+    "source_checked": "2026-09-06",
+    "source_note": "Telp-only line. The unit has no site of its own; Bapenda DKI Jakarta is the agency that operates it and publishes this listing.",
+    "phone_as_printed": "(021) 5737219",
+    "procedures": [
+      "perpanjangan STNK",
+      "pembayaran pajak kendaraan"
+    ]
+  },
+  {
+    "id": "samsat-jakbar",
+    "name": "Kantor Bersama Samsat Jakarta Barat (UPPPKB, Bapenda DKI Jakarta)",
+    "city": "Jakarta Barat",
+    "phone_e164": "+62215442301",
+    "source_url": "https://bapenda.jakarta.go.id/pelayanan/upt-pkb-dan-bbnkb-samsat",
+    "source_checked": "2026-09-06",
+    "source_note": "Three Telp numbers are printed; 5442283 is ALSO the fax, so 5442301 is used to avoid a fax tone.",
+    "phone_as_printed": "(021) 5442283, 5442301, 5442302",
+    "procedures": [
+      "perpanjangan STNK",
+      "pembayaran pajak kendaraan"
+    ]
+  },
+  {
+    "id": "samsat-jakpus",
+    "name": "Kantor Bersama Samsat Jakarta Pusat (UPPPKB, Bapenda DKI Jakarta)",
+    "city": "Jakarta Pusat",
+    "phone_e164": "+622164715202",
+    "source_url": "https://bapenda.jakarta.go.id/pelayanan/upt-pkb-dan-bbnkb-samsat",
+    "source_checked": "2026-09-06",
+    "source_note": "6405826 is ALSO the fax, so 64715202 is used to avoid a fax tone.",
+    "phone_as_printed": "(021) 64715202, 6405826",
+    "procedures": [
+      "perpanjangan STNK",
+      "pembayaran pajak kendaraan"
+    ]
   }
 ]
