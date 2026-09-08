@@ -202,6 +202,31 @@ visible quota meter and a reset time would have cost us nothing to wait for; an 
 cost us the architecture. The Goal is still unpublished, now for an unrelated reason: the
 publishing agent gates publication behind a simulation it could not complete.
 
+**The publish gate is circular, and that is the finding that outlives the quota.** Traced on
+2026-09-08 between 18:09 and 19:42 WIB. Publication requires a passing simulation. A simulation
+can only be assessed with concrete values for the Goal's declared input variables — the agent
+said so itself, reporting "0 of 1 mandatory scenario can be validly assessed because procedure,
+office and city values are unavailable". We supplied them. The next run failed at `Sending
+input`, and the agent had already explained why: "simulasi kandidat yang tersedia tidak menerima
+nilai input konkret" — the available candidate simulation does not accept concrete input values.
+So the gate requires evidence the harness is structurally unable to produce, and a Goal with
+required input variables cannot pass it at all.
+
+Two smaller things fell out of the same session, both cheap to fix:
+
+- The run reported `Running · 88 min 30s` in the header while three of its steps had already
+  failed — `Updating call plan`, `Sending input`, `Running`. The failures were only visible
+  after expanding the step list, and the prose below the spinner was a stale copy of a question
+  already answered. There is no timeout, no terminal state and no cancel; the two preceding
+  turns had finished in 2m13s and 1m33s, so nothing on screen distinguished 88 minutes of work
+  from 88 minutes of nothing.
+- The draft's stored candidate schema shared **zero field names** with the schema we had
+  authored earlier in the same Goal (`documents_to_bring` vs `required_documents_text`,
+  `total_fee` vs `total_fee_idr`, `payment_methods` vs `payment_method`, and so on), and had
+  silently dropped the two evidence fields. The conflict surfaced as a two-button dialog naming
+  neither schema, so either button could have published a contract our client would refuse to
+  dial against. Showing a diff, or the field lists, would make that choice safe.
+
 **What would help,** in order of cost: expose publication as a plain UI action on the Goal
 detail page — it needs no language model, only a state change; or exempt Goal publication from
 the chat LLM quota; or add `POST /v1/goals` and let the API do it.
