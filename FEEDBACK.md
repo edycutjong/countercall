@@ -193,6 +193,15 @@ stating they had "no confirmed reset window or publication exemption to share". 
 open. Account sign-in, which was separately suspended on 2026-09-02, was working again on
 2026-09-08 — the quota block is independent of it, and outlasted it.
 
+**Update, 2026-09-08 evening: the quota lifted, and that is worth reporting as precisely as
+the block was.** Chat accepted prompts again and worked for over thirteen minutes on the Goal
+revision. So the limit is a window, not a permanent ceiling on this account — but no window
+was ever communicated, by the product or by support, which is the part that made it
+unplannable. Two days were spent building around a block that expired without notice. A
+visible quota meter and a reset time would have cost us nothing to wait for; an invisible one
+cost us the architecture. The Goal is still unpublished, now for an unrelated reason: the
+publishing agent gates publication behind a simulation it could not complete.
+
 **What would help,** in order of cost: expose publication as a plain UI action on the Goal
 detail page — it needs no language model, only a state change; or exempt Goal publication from
 the chat LLM quota; or add `POST /v1/goals` and let the API do it.
