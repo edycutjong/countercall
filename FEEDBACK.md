@@ -186,6 +186,13 @@ Reported to CALL-E 2026-09-06 in Discord #support:
 (the first four findings are at
 <https://discord.com/channels/1493880186826133504/1546014799350206464>)
 
+Also raised by email to support@heycall-e.com on 2026-09-06. CALL-E replied on 2026-09-07,
+confirmed the block and logged it as
+[awesome-phone-call-agents#343](https://github.com/CALLE-AI/awesome-phone-call-agents/issues/343),
+stating they had "no confirmed reset window or publication exemption to share". It is still
+open. Account sign-in, which was separately suspended on 2026-09-02, was working again on
+2026-09-08 — the quota block is independent of it, and outlasted it.
+
 **What would help,** in order of cost: expose publication as a plain UI action on the Goal
 detail page — it needs no language model, only a state change; or exempt Goal publication from
 the chat LLM quota; or add `POST /v1/goals` and let the API do it.
