@@ -17,11 +17,12 @@
  * ## Why `calls` exists
  *
  * Publishing a Goal is reachable only through CALL-E Chat — there is no `POST /v1/goals`,
- * no MCP publish tool, and no button on the Goal detail page (FEEDBACK.md finding 5). On
- * 2026-09-02 CALL-E suspended account logins after a security incident, which made that
- * single path unreachable. The Goals transport is still the better product — a published
- * Goal is a reusable, versioned, community-shareable procedure — but a demo path that one
- * vendor outage can sever is not a demo path. `calls` needs nothing but an API key.
+ * no MCP publish tool, and no button on the Goal detail page (FEEDBACK.md finding 5). That
+ * single path is circular: publication requires a passing simulation, the simulation can only
+ * be assessed with concrete values for the Goal's input variables, and the harness refuses
+ * concrete input values. The Goals transport is still the better product — a published
+ * Goal is a reusable, versioned, community-shareable procedure — but a demo path that cannot
+ * be reached at all is not a demo path. `calls` needs nothing but an API key.
  *
  * Selection is by capability, not preference: `selectTransport` picks `goals` whenever a
  * Goal id is configured, and falls back to `calls` otherwise. Set COUNTERCALL_TRANSPORT to

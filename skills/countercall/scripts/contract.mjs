@@ -18,8 +18,9 @@
  *
  * The Calls transport is not a downgrade. It exists because publishing a Goal is reachable
  * only through CALL-E Chat — no API, no MCP tool, no UI button (see FEEDBACK.md finding 5)
- * — and CALL-E suspended account logins after a security incident on 2026-09-02. A demo
- * path that a vendor outage can sever is not a demo path.
+ * — and that gate is circular: it requires a passing simulation, and the simulation harness
+ * refuses the concrete input values it would need to assess one. A demo path that cannot be
+ * reached at all is not a demo path.
  *
  * ## Why the shape looks like this
  *

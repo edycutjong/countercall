@@ -93,7 +93,7 @@ CALL-E live contract verification
   Places a call?           no — reads only, costs no call credit
 
   Authenticated            yes
-  Round trip               790 ms
+  Round trip               873 ms
   Published Goals          0
 
 The Goal catalogue is EMPTY, so the skill runs on the CALLS transport.
@@ -140,8 +140,9 @@ The Goal catalogue is EMPTY, so the skill runs on the CALLS transport.
 
   Why the Goals path is dark: publishing a Goal exists only in CALL-E Chat —
   there is no POST /v1/goals, no MCP publish tool and no button on the Goal
-  detail page. CALL-E suspended account logins on 2026-09-02 after a security
-  incident. The code for that path ships and is tested; it has no Goal to target.
+  detail page. That gate is circular: publishing wants a passing simulation,
+  the simulation wants concrete input values, and the harness refuses them.
+  The code for that path ships and is tested; it has no Goal to target.
 ```
 
 <!-- VERIFY:END -->
@@ -204,8 +205,9 @@ regression test named after the defect.
 
 1. **Goals are owner-scoped, and publishing one is chat-only.** There is no `POST /v1/goals`,
    no MCP publish tool and no action on the Goal detail page — all four surfaces are
-   enumerated in [FEEDBACK.md](FEEDBACK.md) finding 5. CALL-E suspended account logins on
-   2026-09-02 after a security incident, closing that path. **This is why the shipped default
+   enumerated in [FEEDBACK.md](FEEDBACK.md) finding 5. The gate is circular: publishing
+   requires a passing simulation, the simulation needs concrete values for the Goal's input
+   variables, and the harness refuses concrete input values. **This is why the shipped default
    is the Calls transport**, which needs only an API key; the Goals transport ships fully
    tested and activates the moment a Goal can be published. What this repo contributes is the
    Goal *specification* plus the client, not a runnable shared Goal.

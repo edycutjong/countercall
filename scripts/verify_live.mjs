@@ -114,9 +114,9 @@ async function main() {
     /*
      * An empty catalogue is not a dead end any more.
      *
-     * Publishing a Goal is reachable only through CALL-E Chat (FEEDBACK.md finding 5) and
-     * CALL-E suspended account logins after a security incident on 2026-09-02, so the
-     * catalogue may stay empty through no action of ours. The Calls transport needs none of
+     * Publishing a Goal is reachable only through CALL-E Chat (FEEDBACK.md finding 5), and
+     * that gate is circular — it wants a simulation that cannot accept the input values it
+     * needs — so the catalogue may stay empty through no action of ours. The Calls transport needs none of
      * that — it carries the contract with the request — so what this script verifies here is
      * the path the skill will actually run, not the one we wish were available.
      */
@@ -144,8 +144,9 @@ async function main() {
     console.log('');
     console.log('  Why the Goals path is dark: publishing a Goal exists only in CALL-E Chat —');
     console.log('  there is no POST /v1/goals, no MCP publish tool and no button on the Goal');
-    console.log('  detail page. CALL-E suspended account logins on 2026-09-02 after a security');
-    console.log('  incident. The code for that path ships and is tested; it has no Goal to target.');
+    console.log('  detail page. That gate is circular: publishing wants a passing simulation,');
+    console.log('  the simulation wants concrete input values, and the harness refuses them.');
+    console.log('  The code for that path ships and is tested; it has no Goal to target.');
     return EXIT.OK;
   }
 

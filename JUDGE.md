@@ -124,8 +124,10 @@ no seeded mode.
 1. **Goals are owner-scoped, and publishing one is chat-only.** A Goal is authored and
    published in CALL-E Chat — there is no `POST /v1/goals`, no MCP publish tool and no action
    on the Goal detail page (all four surfaces are enumerated in [`FEEDBACK.md`](FEEDBACK.md)
-   finding 5). On 2026-09-02 CALL-E suspended account logins after a security incident, which
-   closed that path entirely. **This is why the default transport is the Calls API**: it needs
+   finding 5). That path is circular rather than merely slow: publication requires a passing
+   simulation, the simulation can only be assessed with concrete values for the Goal's input
+   variables, and the harness refuses concrete input values — so a Goal that declares input
+   variables cannot pass its own publish gate. **This is why the default transport is the Calls API**: it needs
    only a key, so the demo above works for you today. The Goals transport ships fully tested
    and activates the moment a Goal can be published. What this repo contributes to the
    community is the Goal *specification* plus the client, not a runnable shared Goal.

@@ -186,10 +186,13 @@ transport, and failure codes routed exhaustively to distinct user-facing outcome
 
 Publishing a Goal is reachable **only** through CALL-E Chat. There is no `POST /v1/goals`, no
 MCP publish tool, and no action on the Goal detail page — all four surfaces are enumerated in
-[`FEEDBACK.md`](FEEDBACK.md) finding 5. On 2026-09-02 CALL-E suspended account logins after a
-security incident, and the single path to publishing a Goal closed with them.
+[`FEEDBACK.md`](FEEDBACK.md) finding 5. That single path is not merely congested, it is
+circular: publication requires a passing simulation, the simulation can only be assessed with
+concrete values for the Goal's input variables, and the simulation harness refuses concrete
+input values. A Goal that declares input variables cannot satisfy its own publish gate. Traced
+on 2026-09-08 after account sign-in and the chat quota — two earlier blocks — had both cleared.
 
-A demo that one vendor outage can sever is not a demo. So the Calls transport generates the
+A demo path that cannot be reached at all is not a demo path. So the Calls transport generates the
 schema from the same `CONTRACT` that validates the reply — drift is impossible by
 construction rather than merely guarded against — and needs nothing but an API key. The Goals
 transport remains the better product and ships fully tested; it activates the moment a Goal
