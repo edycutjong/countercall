@@ -24,7 +24,7 @@ const DESCRIPTIONS = {
     'Every document the caller must physically bring, one per line, separated by newlines. '
     + 'Use the clerk\'s own words. Do NOT use a JSON array — a Goal Run result is a flat map '
     + 'of scalars and arrays are not expressible. Do not invent items the clerk did not say.',
-  total_fee_idr:
+  total_fee_sgd:
     'The total fee in Indonesian rupiah, as a NUMBER with no separators or currency symbol '
     + '(e.g. 650000). OMIT THIS FIELD ENTIRELY if the clerk did not state a fee. Never guess, '
     + 'never use 0 to mean unknown, never give a typical or published figure.',
@@ -40,7 +40,7 @@ const DESCRIPTIONS = {
     + 'translate, never leave empty.',
 };
 
-const TYPES = { total_fee_idr: 'number' };
+const TYPES = { total_fee_sgd: 'number' };
 
 const properties = {};
 for (const f of contractFields()) {
@@ -130,8 +130,8 @@ ${line()}
 4 · CHECKS BEFORE YOU PUBLISH
 ${line()}
   · additionalProperties is false — an unexpected key must fail, not pass
-  · required lists ${CONTRACT.required.length} fields; total_fee_idr is deliberately NOT among them
-  · total_fee_idr is a number, and is OMITTED when unknown — never null, never 0
+  · required lists ${CONTRACT.required.length} fields; total_fee_sgd is deliberately NOT among them
+  · total_fee_sgd is a number, and is OMITTED when unknown — never null, never 0
   · required_documents_text is a STRING with newlines, never an array
   · every enum carries its "clerk did not know" value:
 ${Object.entries(CONTRACT.enums).map(([k, v]) => `      ${k.padEnd(22)} ${v.join(' | ')}`).join('\n')}

@@ -93,10 +93,10 @@ describe('regressions — CALL-E integration', () => {
     assert.ok(problems.includes('required_documents_text is not a string'));
   });
 
-  test('total_fee_idr_declared_nullable_but_null_is_not_a_GoalScalar', () => {
+  test('total_fee_sgd_declared_nullable_but_null_is_not_a_GoalScalar', () => {
     // Defect: the contract used `number | null` for an unknown fee. null is not a
     // permitted scalar. Absence now carries that meaning instead.
-    assert.ok(CONTRACT.optional.includes('total_fee_idr'));
+    assert.ok(CONTRACT.optional.includes('total_fee_sgd'));
     assert.ok(validateResult({
       required_documents_text: 'KTP',
       payment_method: 'cash',
@@ -104,8 +104,8 @@ describe('regressions — CALL-E integration', () => {
       originals_or_copies: 'copies',
       clerk_certainty: 'unsure',
       clerk_quote: 'q',
-      total_fee_idr: null,
-    }).includes('total_fee_idr is present but not a finite number'));
+      total_fee_sgd: null,
+    }).includes('total_fee_sgd is present but not a finite number'));
   });
 });
 

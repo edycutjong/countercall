@@ -11,7 +11,7 @@ import {
 /** A result that satisfies the contract. Every test below is a mutation of this. */
 const VALID = {
   required_documents_text: 'KTP asli\nFotokopi KTP\nPaspor lama\nMaterai 10.000',
-  total_fee_idr: 650000,
+  total_fee_sgd: 650000,
   payment_method: 'both',
   appointment_required: 'yes',
   originals_or_copies: 'both',
@@ -46,13 +46,13 @@ describe('the contract is scalars-only by construction', () => {
 
   test('contractFields lists required fields before optional ones', () => {
     const fields = contractFields();
-    assert.equal(fields.at(-1), 'total_fee_idr');
+    assert.equal(fields.at(-1), 'total_fee_sgd');
     assert.equal(fields.length, CONTRACT.required.length + CONTRACT.optional.length);
   });
 
   test('the fee is optional, because null is not a GoalScalar', () => {
-    assert.ok(CONTRACT.optional.includes('total_fee_idr'));
-    assert.ok(!CONTRACT.required.includes('total_fee_idr'));
+    assert.ok(CONTRACT.optional.includes('total_fee_sgd'));
+    assert.ok(!CONTRACT.required.includes('total_fee_sgd'));
   });
 
   test('every enum carries an escape hatch for "the clerk did not know"', () => {
@@ -120,11 +120,11 @@ describe('validateResult accepts what it should', () => {
   });
 
   test('a result with the fee absent passes — absence means the clerk did not know', () => {
-    assert.deepEqual(validateResult(without('total_fee_idr')), []);
+    assert.deepEqual(validateResult(without('total_fee_sgd')), []);
   });
 
   test('a zero fee passes, because some procedures really are free', () => {
-    assert.deepEqual(validateResult({ ...VALID, total_fee_idr: 0 }), []);
+    assert.deepEqual(validateResult({ ...VALID, total_fee_sgd: 0 }), []);
   });
 
   test('every enum value in the contract is accepted', () => {
@@ -206,23 +206,23 @@ describe('validateResult rejects what it must', () => {
   });
 
   test('a fee that arrived as a string is rejected, not coerced', () => {
-    const problems = validateResult({ ...VALID, total_fee_idr: '650000' });
-    assert.ok(problems.includes('total_fee_idr is present but not a finite number'));
+    const problems = validateResult({ ...VALID, total_fee_sgd: '650000' });
+    assert.ok(problems.includes('total_fee_sgd is present but not a finite number'));
   });
 
   test('a null fee is rejected — omit the field instead', () => {
-    const problems = validateResult({ ...VALID, total_fee_idr: null });
-    assert.ok(problems.includes('total_fee_idr is present but not a finite number'));
+    const problems = validateResult({ ...VALID, total_fee_sgd: null });
+    assert.ok(problems.includes('total_fee_sgd is present but not a finite number'));
   });
 
   test('a NaN fee is rejected', () => {
-    const problems = validateResult({ ...VALID, total_fee_idr: NaN });
-    assert.ok(problems.includes('total_fee_idr is present but not a finite number'));
+    const problems = validateResult({ ...VALID, total_fee_sgd: NaN });
+    assert.ok(problems.includes('total_fee_sgd is present but not a finite number'));
   });
 
   test('a negative fee is rejected', () => {
-    const problems = validateResult({ ...VALID, total_fee_idr: -1 });
-    assert.ok(problems.includes('total_fee_idr is negative'));
+    const problems = validateResult({ ...VALID, total_fee_sgd: -1 });
+    assert.ok(problems.includes('total_fee_sgd is negative'));
   });
 
   test('an empty object reports every missing field at once', () => {

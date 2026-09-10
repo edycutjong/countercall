@@ -21,11 +21,13 @@ import { CONTRACT, contractFields, resultSchemaJSON, validateResult } from '../s
 
 const OFFICE = {
   id: 'fixture-office',
-  name: 'Kantor Fixture',
-  city: 'Jakarta Selatan',
-  phone_e164: '+622112345678',
-  source_url: 'https://x.invalid/kontak',
-  source_checked: '2026-09-06',
+  name: 'Fixture Agency',
+  city: 'Singapore',
+  phone_e164: '+6561234567',
+  source_url: 'https://x.invalid/contact-us',
+  source_checked: '2026-09-10',
+  region: 'SG',
+  locale: 'en-SG',
 };
 
 /** A schema-valid result, the shape both transports must converge on. */
@@ -196,8 +198,8 @@ describe('the request-scoped schema', () => {
 
   test('the optional fee is emitted but never required', () => {
     const schema = resultSchemaJSON();
-    assert.equal(schema.properties.total_fee_idr.type, 'number');
-    assert.ok(!schema.required.includes('total_fee_idr'));
+    assert.equal(schema.properties.total_fee_sgd.type, 'number');
+    assert.ok(!schema.required.includes('total_fee_sgd'));
   });
 
   test('every enum in the contract reaches the schema', () => {
@@ -265,7 +267,7 @@ describe('the task text sent on the calls transport', () => {
 describe('describe() builds the request without placing it', () => {
   test('the calls request carries recipients, schema and metadata, and no phone field', () => {
     const request = callsTransport.describe(OFFICE, 'paspor baru', 'key-1');
-    assert.deepEqual(request.recipients, [{ phones: [OFFICE.phone_e164] }]);
+    assert.deepEqual(request.recipients, [{ phones: [OFFICE.phone_e164], region: 'SG', locale: 'en-SG' }]);
     assert.equal(request.idempotencyKey, 'key-1');
     assert.equal(request.resultSchema.additionalProperties, false);
     assert.ok(!('phone' in request));

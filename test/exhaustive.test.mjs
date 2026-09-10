@@ -48,7 +48,7 @@ const ENUM_ILLEGAL = [null, undefined, '', 'unknown_typo', 42, true, [], {}];
 const ILLEGAL_BY_FIELD = {
   required_documents_text: [null, undefined, '', '   ', 42, true, [], {}],
   clerk_quote: [null, undefined, '', '   ', 42, true, [], {}],
-  total_fee_idr: [null, undefined, '', 'unknown_typo', true, [], {}, NaN, -1],
+  total_fee_sgd: [null, undefined, '', 'unknown_typo', true, [], {}, NaN, -1],
   payment_method: ENUM_ILLEGAL,
   appointment_required: ENUM_ILLEGAL,
   originals_or_copies: ENUM_ILLEGAL,
@@ -84,7 +84,7 @@ function* validResults() {
           required_documents_text: documents,
           clerk_quote: 'Bawa KTP asli dan fotokopinya.',
         };
-        if (fee !== undefined) result.total_fee_idr = fee;
+        if (fee !== undefined) result.total_fee_sgd = fee;
         yield result;
       }
     }
@@ -110,7 +110,7 @@ describe('exhaustive verification of the result contract', () => {
     for (const result of validResults()) {
       const card = renderCard(result, OFFICE, { procedure: 'perpanjangan paspor' });
 
-      if (!('total_fee_idr' in result)) {
+      if (!('total_fee_sgd' in result)) {
         assert.match(card, /Fee\s+—/, 'absent fee did not render as an em dash');
         assert.ok(!/Rp/.test(card), 'absent fee rendered a rupiah figure');
       }
@@ -146,7 +146,7 @@ describe('exhaustive verification of the result contract', () => {
       const base = {
         ...enums,
         required_documents_text: 'KTP asli\nFotokopi KTP',
-        total_fee_idr: 650000,
+        total_fee_sgd: 650000,
         clerk_quote: 'Bawa KTP asli dan fotokopinya.',
       };
       assert.deepEqual(validateResult(base), []);

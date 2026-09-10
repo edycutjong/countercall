@@ -42,7 +42,7 @@
  * 1. `required_documents_text` is a newline-separated STRING, decoded client-side by
  *    `decodeDocuments`. A document checklist is the product, so it does not get to be
  *    unrepresentable.
- * 2. `total_fee_idr` is OPTIONAL rather than nullable. `null` is not a GoalScalar, but
+ * 2. `total_fee_sgd` is OPTIONAL rather than nullable. `null` is not a GoalScalar, but
  *    absence is free: a field that is not in `required` is simply missing when the clerk
  *    did not know. The rule from references/safety.md survives intact — a missing fee is
  *    missing, never `0`, and never a typical value.
@@ -50,7 +50,7 @@
 
 /** Bump `version` to match the Goal's published_run_spec version after each publish. */
 export const CONTRACT = {
-  version: 1,
+  version: 2,
 
   required: [
     'required_documents_text',
@@ -61,7 +61,7 @@ export const CONTRACT = {
     'clerk_quote',
   ],
 
-  optional: ['total_fee_idr'],
+  optional: ['total_fee_sgd'],
 
   enums: {
     payment_method: ['cash', 'card', 'both', 'unknown'],
@@ -80,7 +80,7 @@ export const CONTRACT = {
   descriptions: {
     required_documents_text:
       'Every document the clerk said to bring, one per line, in the clerk\'s own words and ' +
-      'in Indonesian. Do not translate, renumber, deduplicate or add documents the clerk did ' +
+      'in English. Do not translate, renumber, deduplicate or add documents the clerk did ' +
       'not name. If the clerk named no documents, this call has no usable answer.',
     payment_method:
       'How the fee is paid at the counter. Use "both" only if the clerk said both are ' +
@@ -97,11 +97,11 @@ export const CONTRACT = {
       '"unsure" when they hedged, guessed, or told the caller to confirm at the counter. Use ' +
       '"refused" when they declined to answer by phone or redirected without answering.',
     clerk_quote:
-      'One short verbatim sentence from the clerk, in Indonesian, that most directly ' +
+      'One short verbatim sentence from the clerk, in English, that most directly ' +
       'supports the fields above. This is the evidence for the whole card. Quote the clerk, ' +
       'never the caller, and never paraphrase.',
-    total_fee_idr:
-      'The total fee in Indonesian rupiah as a plain number, with no separators or currency ' +
+    total_fee_sgd:
+      'The total fee in Singapore dollars as a plain number, with no separators or currency ' +
       'symbol. OMIT THIS FIELD ENTIRELY if the clerk did not state a fee or was unsure. ' +
       'Never guess, never use a typical value, and never send 0 to mean unknown.',
   },
@@ -119,7 +119,7 @@ export const CONTRACT = {
 export function resultSchemaJSON() {
   const properties = {};
   for (const field of contractFields()) {
-    const property = { type: field === 'total_fee_idr' ? 'number' : 'string' };
+    const property = { type: field === 'total_fee_sgd' ? 'number' : 'string' };
     if (CONTRACT.enums[field]) property.enum = [...CONTRACT.enums[field]];
     if (CONTRACT.descriptions[field]) property.description = CONTRACT.descriptions[field];
     properties[field] = property;
@@ -196,12 +196,12 @@ export function validateResult(result) {
     }
   }
 
-  if ('total_fee_idr' in result) {
-    const fee = result.total_fee_idr;
+  if ('total_fee_sgd' in result) {
+    const fee = result.total_fee_sgd;
     if (typeof fee !== 'number' || !Number.isFinite(fee)) {
-      problems.push('total_fee_idr is present but not a finite number');
+      problems.push('total_fee_sgd is present but not a finite number');
     } else if (fee < 0) {
-      problems.push('total_fee_idr is negative');
+      problems.push('total_fee_sgd is negative');
     }
   }
 

@@ -24,7 +24,7 @@ Result:
 ```json
 {
   "required_documents_text": "KTP asli\nKartu Keluarga asli\npaspor lama",
-  "total_fee_idr": 650000,
+  "total_fee_sgd": 650000,
   "payment_method": "cash",
   "appointment_required": "yes",
   "originals_or_copies": "originals",

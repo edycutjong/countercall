@@ -24,7 +24,7 @@ being asked a general question about a procedure, and does not need to know who 
 | Field | Type | Values |
 |---|---|---|
 | `required_documents_text` | string | newline-separated, in the clerk's terms, not normalised |
-| `total_fee_idr` | number, **optional** | absent when the clerk did not know |
+| `total_fee_sgd` | number, **optional** | absent when the clerk did not know |
 | `payment_method` | enum | `cash` · `card` · `both` · `unknown` |
 | `appointment_required` | enum | `yes` · `no` · `unknown` |
 | `originals_or_copies` | enum | `originals` · `copies` · `both` · `unknown` |
@@ -44,7 +44,7 @@ Because clerks say "I am not sure", and that has to be representable. An enum wi
 `unknown` forces the extraction to pick a value it did not hear, which is exactly the
 failure this skill is built to avoid.
 
-`total_fee_idr` is **optional** for the same reason. A missing fee is an absent key, never
+`total_fee_sgd` is **optional** for the same reason. A missing fee is an absent key, never
 `0` and never a typical value.
 
 ### Why the document list is a string
@@ -63,7 +63,7 @@ one-shot Calls API does accept `simple array.items` in its request-scoped `resul
 but Goals does not, and Goals is what provides the published, reusable procedure catalogue.
 
 So the checklist travels as a newline-separated string and is decoded client-side by
-`decodeDocuments`. The same constraint is why `total_fee_idr` is optional rather than
+`decodeDocuments`. The same constraint is why `total_fee_sgd` is optional rather than
 nullable: `null` is not a `GoalScalar`, but an absent key costs nothing and means exactly
 what `null` meant.
 

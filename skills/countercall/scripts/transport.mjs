@@ -47,9 +47,9 @@ import { diffContract, publishedRunSpec } from './_lib.mjs';
  */
 export function buildTask(office, procedure) {
   return [
-    `Call ${office.phone_e164}, the public enquiries line for ${office.name} in ${office.city}, Indonesia.`,
+    `Call ${office.phone_e164}, the public enquiries line for ${office.name} in ${office.city}, Singapore.`,
     '',
-    'Speak Indonesian throughout. You are an assistant calling on behalf of a member of the',
+    'Speak English throughout. You are an assistant calling on behalf of a member of the',
     `public who intends to visit the office in person for: ${procedure}.`,
     '',
     'Identify yourself as an automated assistant calling to ask what to bring, before asking',
@@ -138,7 +138,7 @@ export const callsTransport = {
     return {
       transport: 'calls',
       task: buildTask(office, procedure),
-      recipients: [{ phones: [office.phone_e164] }],
+      recipients: [{ phones: [office.phone_e164], region: office.region, locale: office.locale }],
       resultSchema: resultSchemaJSON(),
       metadata: { office_id: office.id, office_name: office.name, procedure, city: office.city },
       idempotencyKey: key,

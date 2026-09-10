@@ -43,9 +43,9 @@ const PHRASING = {
   },
 };
 
-export function formatFeeIdr(fee) {
+export function formatFeeSgd(fee) {
   if (typeof fee !== 'number' || !Number.isFinite(fee)) return UNKNOWN;
-  return `Rp ${Math.round(fee).toLocaleString('id-ID')}`;
+  return `S$${Math.round(fee).toLocaleString('en-SG')}`;
 }
 
 /**
@@ -67,7 +67,7 @@ export function renderCard(result, office, meta = {}) {
   for (const document of documents) lines.push(`    • ${document}`);
   lines.push('');
   lines.push(labelled('Documents', PHRASING.originals_or_copies[result.originals_or_copies]));
-  lines.push(labelled('Fee', formatFeeIdr(result.total_fee_idr)));
+  lines.push(labelled('Fee', formatFeeSgd(result.total_fee_sgd)));
   lines.push(labelled('Payment', PHRASING.payment_method[result.payment_method]));
   lines.push(labelled('Appointment', PHRASING.appointment_required[result.appointment_required]));
   lines.push('');

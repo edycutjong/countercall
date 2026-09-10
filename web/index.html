@@ -548,8 +548,8 @@ footer a:hover{color:var(--accent)}
   }
   function card(d){
     var r = d.result || {};
-    var fee = (typeof r.total_fee_idr === 'number' && isFinite(r.total_fee_idr))
-      ? 'Rp ' + Math.round(r.total_fee_idr).toLocaleString('id-ID') : null;
+    var fee = (typeof r.total_fee_sgd === 'number' && isFinite(r.total_fee_sgd))
+      ? 'Rp ' + Math.round(r.total_fee_sgd).toLocaleString('id-ID') : null;
     var docs = String(r.required_documents_text || '').split('\n')
       .map(function(l){ return l.replace(/^\s*[-*•]\s*/,'').trim(); }).filter(Boolean);
     return '<div class="card">'+

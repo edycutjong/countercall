@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { renderCard, renderFailure, formatFeeIdr } from '../skills/countercall/scripts/render.mjs';
+import { renderCard, renderFailure, formatFeeSgd } from '../skills/countercall/scripts/render.mjs';
 
 const OFFICE = {
   id: 'imigrasi-jaksel',
@@ -14,7 +14,7 @@ const OFFICE = {
 
 const RESULT = {
   required_documents_text: 'KTP asli\nFotokopi KTP\nPaspor lama',
-  total_fee_idr: 650000,
+  total_fee_sgd: 650000,
   payment_method: 'both',
   appointment_required: 'yes',
   originals_or_copies: 'both',
@@ -25,29 +25,29 @@ const RESULT = {
 const META = { procedure: 'perpanjangan paspor', runId: 'grun_abc123' };
 const card = (result = RESULT, meta = META) => renderCard(result, OFFICE, meta);
 
-describe('formatFeeIdr', () => {
-  test('formats a fee in Indonesian grouping', () => {
-    assert.match(formatFeeIdr(650000), /^Rp 650[.,]000$/);
+describe('formatFeeSgd', () => {
+  test('formats a fee with Singapore dollar grouping', () => {
+    assert.match(formatFeeSgd(650000), /^S\$650[.,]000$/);
   });
 
   test('formats a free procedure as zero, not as unknown', () => {
-    assert.equal(formatFeeIdr(0), 'Rp 0');
+    assert.equal(formatFeeSgd(0), 'S$0');
   });
 
   test('an absent fee renders as an em dash, never as a number', () => {
-    assert.equal(formatFeeIdr(undefined), '—');
+    assert.equal(formatFeeSgd(undefined), '—');
   });
 
   test('a null fee renders as an em dash', () => {
-    assert.equal(formatFeeIdr(null), '—');
+    assert.equal(formatFeeSgd(null), '—');
   });
 
   test('a NaN fee renders as an em dash rather than "NaN"', () => {
-    assert.equal(formatFeeIdr(NaN), '—');
+    assert.equal(formatFeeSgd(NaN), '—');
   });
 
   test('a string fee renders as an em dash rather than being coerced', () => {
-    assert.equal(formatFeeIdr('650000'), '—');
+    assert.equal(formatFeeSgd('650000'), '—');
   });
 });
 
@@ -73,7 +73,7 @@ describe('renderCard shows what the clerk said', () => {
   });
 
   test('shows the fee', () => {
-    assert.match(card(), /Rp 650[.,]000/);
+    assert.match(card(), /S\$650[.,]000/);
   });
 
   test('shows the payment method in words, not the raw enum', () => {
@@ -114,7 +114,7 @@ describe('renderCard shows what the clerk said', () => {
 describe('renderCard never invents what the clerk did not say', () => {
   test('an absent fee leaves the row blank, not filled with a typical value', () => {
     const noFee = { ...RESULT };
-    delete noFee.total_fee_idr;
+    delete noFee.total_fee_sgd;
     const output = card(noFee);
     assert.ok(output.includes('Fee'));
     assert.ok(!output.includes('650'));
