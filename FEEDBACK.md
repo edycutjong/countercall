@@ -1,8 +1,13 @@
 # Feedback to the CALL-E team
 
-Five findings from building **CounterCall** — an Agent Skill that phones an Indonesian
-government counter and returns a validated checklist of what to bring — against the Goals API
-between 2026-08-19 and 2026-09-03.
+Eight findings from building **CounterCall** — an Agent Skill that phones a government
+enquiries line and returns a validated checklist of what to bring — against the Goals API and
+the Calls API between 2026-08-19 and 2026-09-10.
+
+Findings 1–5 were filed with the CALL-E Feedback Survey on 2026-09-06. **Findings 6, 7 and 8
+were found on 2026-09-10 and are not yet filed** — the survey stays open until 2026-09-18, and
+they are the most consequential three in the document: between them they ended this project's
+original target country and forced a rebuild four days before the deadline.
 
 Each one is a thing we hit while building, with the reproduction and the workaround we
 shipped. Nothing here is a wishlist item; every entry cost us a design change.
@@ -11,8 +16,9 @@ shipped. Nothing here is a wishlist item; every entry cost us a design change.
      CALL-E Feedback Survey: submitted 2026-09-06 via
        https://call-e.devpost.com/details/feedback
        (Google Form 1FAIpQLSfGWkt2F_ED6aLatQjtjBX8YEpBVQ47A39yeDd1KQRKX488Lg)
-     All four findings went in the "bugs or issues" field, the two documentation-shaped
+     Findings 1-5 went in the "bugs or issues" field, the two documentation-shaped
      ones also in the documentation field, and the what-worked section in "other feedback".
+     FINDINGS 6, 7 AND 8 ARE NOT YET FILED - added 2026-09-10, refile before 2026-09-18.
 
      Submitted twice, both 2026-09-06, identical content. The first went through without a
      Google session, so no receipt was issued — the form's "Login ke Google" link embeds the
@@ -230,6 +236,108 @@ Two smaller things fell out of the same session, both cheap to fix:
 **What would help,** in order of cost: expose publication as a plain UI action on the Goal
 detail page — it needs no language model, only a state change; or exempt Goal publication from
 the chat LLM quota; or add `POST /v1/goals` and let the API do it.
+
+## 6. Indonesia, Malaysia and the Philippines are refused, while the docs still list them as supported
+
+**Severity: high — it invalidates a documented capability that projects are built on.** Found
+2026-09-10.
+
+Every call to an Indonesian number is now refused before dialling, in *both* languages. We
+probed with `plan_call`, which never dials, so each of these cost nothing and rang nobody:
+
+| target | region + language | result |
+|---|---|---|
+| `+622179170915` (Imigrasi Jakarta Selatan) | ID + Bahasa | refused — *"kombinasi wilayah ID dan Bahasa belum didukung"* |
+| `+622179170915` | ID + **English** | refused — *"recognized as Indonesia / English, which is not currently supported"* |
+| `+60380008000` (Jabatan Imigresen Malaysia) | MY + English | refused — *"the recognized destination is Malaysia and the call language is English … isn't supported right now"* |
+| `+63284652400` (PH Bureau of Immigration) | PH + English | refused — *"calls to the Philippines in English are not currently supported"* |
+| `+6563916100` (ICA Singapore) | SG + English | **`ready_to_run: true`** |
+
+The published capability summary we crawled on 2026-07-29 lists **US, SG, MY, IN, AE, AU, CA,
+GB, VN, DE, JP, FR, MX, BR, ID, PH, KE** as supported regions, with Indonesia annotated
+*"ID / Indonesia (English)"*. Three of those — ID, MY, PH — are refused today. The allow-list
+the API offered back in the refusal was `US|English`, `US|Bahasa`, `SG|English`, `AU|English`,
+`IN|English`.
+
+Two things would have saved us a rebuild four days before a deadline:
+
+1. **A machine-readable, live list of supported region + language pairs.** There is no endpoint
+   for this. We discovered the contraction by being refused at dial time, on the day we needed
+   the call. A `GET /v1/regions` would have let our preflight fail in July instead of September.
+2. **A changelog entry.** This is the same gap as finding 4. A region leaving the supported set
+   is a breaking change for every project targeting it, and it was silent.
+
+Worth noting, because it cost us a wrong turn: the recommendation given for the degraded shared
+pool was to buy a US or Brazil number. That does not help here — the block is evaluated on the
+**recipient's** region, so a US caller ID still cannot reach `+62`.
+
+---
+
+## 7. The agent cannot send DTMF tones, so any IVR-gated line is unreachable
+
+**Severity: high — it is the difference between reaching an institution and not.** Found
+2026-09-10, call `call_h9t6ZZJ_2kG_fxTJXlOQgw`, 193 seconds, status `completed`,
+`structured_result: null`.
+
+We called ICA Singapore's published main line. It answered, and then asked the agent to press a
+key. The agent replied in words, four times, and was hung up on:
+
+```
+  6s  callee  Good afternoon. Thank you for calling Immigration and Checkpoints Authority.
+ 10s  callee  For English, press 1.
+ 26s  agent   Okay.
+ 32s  callee  We did not receive your entry. For English, press 1.
+ 48s  agent   No rush.
+ 54s  callee  We did not receive your entry. For English, press 1.
+ 64s  agent   No rush, I'll hold.
+ 75s  callee  You have exceeded the maximum number of tries. Please hold while we connect
+              you to our next available officer.
+124s  callee  For services for Singapore citizens, press 1. Permanent residents, press 2.
+              Visit us, press 3. Other ICA services, press 4.
+131s  agent   Okay.
+150s  callee  We did not receive your entry. [menu repeats]
+193s  callee  You have exceeded the maximum number of tries. Thank you for your call. Goodbye.
+```
+
+The agent's own summary is accurate: *"The call reached ICA's automated phone menu, but the goal
+was not completed. The assistant did not make the required keypad selections."*
+
+`dtmf`, `keypad` and `tone` do not appear anywhere in the OpenAPI specification or in any page
+of the developer documentation. There is no request parameter to enable it and no task-language
+instruction that reaches it — the model is answering the menu conversationally because speech is
+the only channel it has.
+
+This matters more than a missing convenience. The stated use case is calling businesses and
+institutions, and a main line is *exactly* the kind of number that sits behind a menu. As it
+stands, the platform can reach a person who picks up directly, and cannot reach any organisation
+large enough to have a switchboard. We would rank this above every other item in this document:
+support for sending digits, even a simple `dtmf` action the model can emit mid-call, would open
+up the entire category.
+
+---
+
+## 8. `completion_confidence` reported `high` on a call that achieved nothing
+
+**Severity: medium — it makes the field unusable as a success signal.** Same call as finding 7.
+
+That 193-second call reached a menu, failed to answer it four times, was disconnected, and
+returned no structured result at all. The task response carried:
+
+```json
+"completion_confidence": { "score": 0.9, "label": "high" }
+```
+
+We read `completion_confidence` as *"how confident are you that the task was accomplished"*, and
+recorded it per call for our benchmark. On that reading, 0.9 on this transcript is plainly wrong.
+If instead it means *"how confident am I that the call reached a terminal state"* or *"how
+clean was the audio"*, then the name is the problem and the docs do not disambiguate it.
+
+Either way the practical consequence is the same: a caller cannot use this field to decide
+whether to retry, which is the obvious thing to want it for. We now gate entirely on
+`structured_result` being non-null and on our own schema validation, and we do not surface this
+number to users.
+
+---
 
 ## What we would say about the parts that worked
 
