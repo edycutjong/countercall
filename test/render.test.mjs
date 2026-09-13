@@ -219,6 +219,8 @@ describe('renderFailure is honest and terminal', () => {
     const codes = [
       'call_failed', 'no_answer', 'declined', 'timed_out',
       'canceled', 'result_invalid', 'result_unavailable', 'result_failed',
+      // Not in the enum: transport.mjs's own code for `completed` + `structuredResult: null`.
+      'result_unextractable',
     ];
     for (const code of codes) {
       assert.ok(!failure(code).includes('Unrouted'), `${code} is unrouted`);

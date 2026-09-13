@@ -106,6 +106,8 @@ export function renderFailure(code, office, meta = {}) {
     result_invalid:
       'The call completed, but the answer did not match the contract. Nothing is shown.',
     result_unavailable: 'The call completed but no structured answer was produced.',
+    result_unextractable:
+      'The call connected, but nothing said on it answered the questions. Nothing is shown.',
     result_failed: 'The answer could not be processed into a checklist.',
     timed_out: 'No usable answer was obtained before the deadline.',
     call_failed: 'The call could not be completed.',
