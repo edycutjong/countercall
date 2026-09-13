@@ -1,27 +1,28 @@
-<!--
-  PENDING before submission — resolve every marker in this file:
-  1. The receipt block: real call count, answer rate, p50/p95, run ids.
-     Produce with `npm run bench -- --live --calls 20`, then `npm run bench -- --report`.
-  2. Demo video URL and repo URL.
-  3. The 30-second path assumes the Goal is published — confirm the ids.
--->
-
 # For judges
 
 Everything you need in one page. No setup, no keys, no clone required to read it.
 
 ## The claim
 
-**Before you lose a morning at an Indonesian government counter, CALL-E phones the office
-for you, survives the IVR and the hold, and hands back exactly what to bring — the document
-checklist, the fee, cash-or-card, and whether you need an appointment first.**
+**Before you lose a morning at a government counter, CALL-E phones the office for you and
+hands back exactly what to bring — the document checklist, the fee, cash-or-card, and whether
+you need an appointment first — and leaves the row empty when the clerk did not know.**
+
+What it has actually done so far, on the record: **two real calls to two Singapore agencies,
+zero checklists.** ICA's line is a touch-tone menu and CALL-E cannot send DTMF; MOM's line was
+busy. Both calls, their ids and their full transcripts are in [`DEMO.md`](DEMO.md), the
+rendered "no checklist" outcomes are what the shipped code printed, and the DTMF gap is filed
+back to CALL-E as [finding 7](FEEDBACK.md). We are showing you the wall, with the receipt,
+rather than a call that did not happen.
 
 ## The 30-second path
 
-1. Read one real call's output: the checklist card in [`DEMO.md`](DEMO.md), with the
-   clerk's verbatim line and the CALL-E `runId` you can cross-reference.
-2. Watch the demo video — <!-- PENDING: video URL --> — one real call, start to finish,
-   with the handset audible.
+1. Read one real call, start to finish, in [`DEMO.md`](DEMO.md): the request, the
+   unedited `transcript_turns` from `GET /v1/calls/call_h9t6ZZJ_2kG_fxTJXlOQgw`, and what
+   `call.mjs` rendered for it — `NO CHECKLIST — result_unextractable`, not a partial card.
+2. Watch the demo video — <!-- PENDING: video URL --> — 2:03. The call beat is that
+   transcript revealed at its real offsets, with the call id on screen; CALL-E exposes no
+   audio recording, so text is the honest form.
 3. Skim [`skills/countercall/references/safety.md`](skills/countercall/references/safety.md).
    It is the part of this project we most want read: it governs pointing an automated
    caller at a public servant who did not opt in.
@@ -45,13 +46,14 @@ Verifiable numbers only. Anything not yet measured is marked as such rather than
 | Live CALL-E integration tests | **7** — real API reads, skipped loudly without a key |
 | Runtime dependencies | **1** (`@call-e/calle`) |
 
-<!-- PENDING — fill from `npm run bench -- --report` after the live bench:
-| Real calls placed to real offices | N |
-| Line answered | N (X%) |
-| Usable validated checklist | N (X%) |
-| p50 / p95 dial → validated checklist | Xs / Xs |
-| CALL-E run ids | grun_..., grun_... |
--->
+| Real calls placed to real offices | **2** (2026-09-10) |
+| Line answered | **1** (50%) — ICA's IVR; MOM was busy |
+| Usable validated checklist | **0** (0%) |
+| p50 / p95 dial → validated checklist | — / — (no checklist yet; blank, not estimated) |
+| CALL-E call ids | `call_h9t6ZZJ_2kG_fxTJXlOQgw`, `call_Xpb-x1M9vaCSxPoJWAhpUQ` |
+
+Produced by `npm run bench -- --report` over [`bench/records.json`](bench/records.json); the
+full table, failures included, is in [`DEMO.md`](DEMO.md#the-receipt).
 
 ### Where 11,520 comes from
 
@@ -79,9 +81,9 @@ including the full result schema, and stops:
 
 ```bash
 node skills/countercall/scripts/preflight.mjs \
-  --office imigrasi-jaksel --procedure "perpanjangan paspor"
+  --office ica-sg --procedure "passport renewal"
 node skills/countercall/scripts/call.mjs \
-  --office imigrasi-jaksel --procedure "perpanjangan paspor"
+  --office ica-sg --procedure "passport renewal"
 ```
 
 With a key, still placing no call — this reads the live service and reports which transport
@@ -98,7 +100,7 @@ Goal required:**
 ```bash
 export CALLE_API_KEY=...          # Developer API key — this is the only one needed
 node skills/countercall/scripts/call.mjs \
-  --office imigrasi-jaksel --procedure "perpanjangan paspor" --live
+  --office ica-sg --procedure "passport renewal" --live
 ```
 
 That runs the **Calls transport**, which carries the contract with the request. If you have
@@ -106,9 +108,11 @@ published a Goal of your own, `export COUNTERCALL_GOAL_ID=...` and the same comm
 **Goals transport** against it instead — same card, same validation. `--transport goals|calls`
 forces either one.
 
-> Indonesian government counters answer roughly **Mon–Fri 08:00–15:00 WIB (UTC+7)**. Outside
-> those hours the honest outcome is `no_answer`, and that is what you will see — the tool has
-> no simulated mode to fall back on.
+> Singapore agency lines answer roughly **Mon–Fri 08:00–17:00 SGT (UTC+8)**. Outside those
+> hours the honest outcome is `no_answer`; inside them, ICA's line is an IVR that CALL-E cannot
+> navigate, so expect `result_unextractable` — and that is what you will see. The tool has no
+> simulated mode to fall back on. CALL-E currently refuses Indonesian, Malaysian and
+> Philippine numbers ([finding 6](FEEDBACK.md)), which is why the seed file is Singapore.
 
 Note the `--live` flag. It is **required to dial** — the default path prints the exact
 request and stops. That is the opposite of a demo mode: there is no flag that makes this
@@ -145,13 +149,15 @@ no seeded mode.
    right one.
 4. **A clerk's spoken answer is not legally binding**, and every card says so. Requirements
    change and individual counters apply discretion.
-5. **Whether Indonesian government lines reliably answer an automated caller is the
-   project's largest open risk.** It is measured by the benchmark and reported honestly,
-   failures included — not assumed.
+5. **Whether government lines answer an automated caller human-first is the project's
+   largest open risk — and so far the answer is no.** Two of two real calls reached no clerk:
+   one IVR CALL-E cannot key through, one busy line. It is measured by the benchmark and
+   reported honestly, failures included — not assumed. The fix is target selection (a line a
+   person answers), or DTMF support on CALL-E's side.
 
 ## Links
 
-- Repo — <!-- PENDING: repo URL -->
+- Repo — <https://github.com/edycutjong/countercall>
 - Demo video — <!-- PENDING: video URL -->
 - Devpost — https://call-e.devpost.com/
 - The Agent Skill package — [`skills/countercall/`](skills/countercall/)

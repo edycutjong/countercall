@@ -280,7 +280,7 @@ pool was to buy a US or Brazil number. That does not help here — the block is 
 `structured_result: null`.
 
 We called ICA Singapore's published main line. It answered, and then asked the agent to press a
-key. The agent replied in words, four times, and was hung up on:
+key. The agent replied in words — nine turns across two menus in the full transcript; abridged here — and was hung up on:
 
 ```
   6s  callee  Good afternoon. Thank you for calling Immigration and Checkpoints Authority.
@@ -320,7 +320,7 @@ up the entire category.
 
 **Severity: medium — it makes the field unusable as a success signal.** Same call as finding 7.
 
-That 193-second call reached a menu, failed to answer it four times, was disconnected, and
+That 193-second call reached a menu, failed to key through it, was disconnected, and
 returned no structured result at all. The task response carried:
 
 ```json

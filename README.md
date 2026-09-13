@@ -1,11 +1,8 @@
 <!--
-  PENDING before submission — grep this file for "PENDING" and resolve every hit:
-  1. Hero image. assets/readme-hero-animated.svg and readme-hero.png both render an
-     INVENTED call (Rp 650.000) and are blocked by assets/ASSETS.md until re-exported from
-     a real goals.run result. The icon is clean and is shipped at docs/icon.svg.
-  2. The Engineering Rigor benchmark rows — fill from `npm run bench -- --report`.
-  3. Demo video URL, and the DEMO.md live-proof line, which needs a real call's runId.
-
+  PENDING before submission: the demo video URL (one line, under Links).
+  Resolved 2026-09-13: benchmark rows and live proof from the two real calls; the example
+  card is now the real ICA render, not an invented one. No hero image is shipped — the only
+  rendered card that exists is a refusal, and a mock-up of a success is not shipped.
   Resolved 2026-09-05: repo URL, judge demo link, live URL, CI badge, Release badge (v1.0.0).
 -->
 
@@ -41,7 +38,7 @@
 
 ### The Problem
 
-In Indonesia, finding out what to bring to a government counter means going there. The
+Finding out what to bring to a government counter usually means going there. The
 published page is stale or silent, the phone line is an IVR followed by hold music, and the
 answer that actually matters — *do they take card, do I need the original, do I need an
 appointment first* — lives only in a clerk's head. So people take a morning off, queue, and
@@ -58,35 +55,37 @@ said, so you can judge the answer yourself.
 When the clerk is unsure, it says so. When the line does not answer, it says that too. It
 never invents a fee.
 
+A filled card carries the documents in the clerk's own words, *Documents* (originals /
+copies / both), *Fee* (omitted when the clerk did not know — never guessed), *Payment*,
+*Appointment*, a certainty line (*confident / unsure / refused*) and the clerk's verbatim
+sentence. **No real call has produced one yet**, so the card shown here is not a mock-up of
+one; it is what the first real call actually rendered, through the shipped code:
+
 ```
+$ node skills/countercall/scripts/call.mjs --office ica-sg --procedure "passport renewal" --live
+Dialling +6563916100 via the calls transport ...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Kantor Imigrasi Jakarta Selatan
-  perpanjangan paspor
+  Immigration & Checkpoints Authority (ICA)
+  passport renewal
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  BRING
-    • KTP asli
-    • Kartu Keluarga asli
-    • paspor lama
+  NO CHECKLIST — result_unextractable
 
-  Documents             Originals
-  Fee                   —
-  Payment               Cash
-  Appointment           Yes — book before going
+  The call connected, but nothing said on it answered the
+  questions. Nothing is shown.
 
-──────────────────────────────────────────────────────────────────
-  The clerk was unsure. Verify these details in person.
+  No partial checklist is ever rendered.
 
-  In the clerk's words:
-    "Untuk biayanya saya kurang tahu, nanti ditanyakan di loket
-     saja."
+  CALL-E run            call_h9t6ZZJ_2kG_fxTJXlOQgw
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Failed after 310.8s.
 ```
 
-The Fee row is empty because the clerk did not know. That is a **successful** call — the
-user learns three documents and an appointment requirement, and knows to ask about the fee
-at the window. An unknown fee costs one question at the counter; an invented one costs the
-trip.
+ICA's line is a touch-tone menu and CALL-E cannot send DTMF ([FEEDBACK.md](FEEDBACK.md)
+finding 7), so the call connected and reached no clerk. The honest render is *no checklist*
+— not a partial card, not a typical fee. The full transcript is in [DEMO.md](DEMO.md). An
+unknown answer costs one question at the counter; an invented one costs the trip.
 
 ## 🏗️ Architecture & Tech Stack
 
@@ -220,10 +219,13 @@ shared Goal.
 | Runtime dependencies | **1** (`@call-e/calle`) |
 | CI pipeline | 6 stages, parallel, with concurrency control |
 
-<!-- PENDING: add from `npm run bench -- --report` once real calls exist.
-     | Real calls placed | N |  | Line answered | N (X%) |
-     | p50 / p95 dial → validated checklist | Xs / Xs |
-     bench.mjs refuses to render a table from zero records, by design. -->
+| Real calls placed to real offices | **2** (2026-09-10, Singapore) |
+| Line answered | **1** (50%) — an IVR CALL-E cannot key through; the other was busy |
+| Usable validated checklist | **0** — p50/p95 left blank rather than estimated |
+
+Two calls, zero checklists, reported as such: `npm run bench -- --report` over
+[`bench/records.json`](bench/records.json), full transcript and both call ids in
+[DEMO.md](DEMO.md).
 
 **Where 11,520 comes from.** `validateResult` + `renderCard` are the decision function that
 must never be wrong — everything downstream is a person deciding whether to travel across a
@@ -274,7 +276,7 @@ Then, without placing a call:
 
 ```bash
 node skills/countercall/scripts/preflight.mjs \
-  --office imigrasi-jaksel --procedure "perpanjangan paspor"
+  --office ica-sg --procedure "passport renewal"
 ```
 
 `preflight` validates the number, checks the live Goal contract against the pinned one, and
@@ -341,7 +343,7 @@ countercall/
 - **Live site:** <https://countercall.edycu.dev> — no sign-up, no key, free through 2026-10-13
 - **Architecture:** <https://countercall.edycu.dev/architecture/> — every surface and every refusal
 - **Demo video:** <!-- PENDING: video URL (public, YouTube or Vimeo, under 3 minutes) -->
-- **Live proof:** <!-- PENDING: [DEMO.md](DEMO.md) needs a real call's runId -->
+- **Live proof:** [DEMO.md](DEMO.md) — both real calls, ids, unedited transcript, and what was rendered
 
 ## 📄 License
 

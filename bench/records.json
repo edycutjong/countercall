@@ -1,0 +1,26 @@
+[
+  {
+    "outcome": "result_unextractable",
+    "validated": false,
+    "runId": "call_h9t6ZZJ_2kG_fxTJXlOQgw",
+    "ms": 310763,
+    "transport": "calls",
+    "office": "ica-sg",
+    "procedure": "passport renewal",
+    "idempotencyKey": "countercall:ica-sg:passport-renewal:2026-09-10:v1",
+    "at": "2026-09-10T07:34:20.023672Z",
+    "ms_source": "createdAt -> completedAt from GET /v1/calls/{id}; the live run on 2026-09-10 was placed with call.mjs, not bench.mjs, so wall-clock was not captured. Reconstructed 2026-09-13."
+  },
+  {
+    "outcome": "call_failed",
+    "validated": false,
+    "runId": "call_Xpb-x1M9vaCSxPoJWAhpUQ",
+    "ms": 76665,
+    "transport": "calls",
+    "office": "mom-sg",
+    "procedure": "work pass renewal",
+    "idempotencyKey": "countercall:mom-sg:work-pass-renewal:2026-09-10:v1",
+    "at": "2026-09-10T07:37:51.900694Z",
+    "ms_source": "createdAt -> completedAt from GET /v1/calls/{id}; the live run on 2026-09-10 was placed with call.mjs, not bench.mjs, so wall-clock was not captured. Reconstructed 2026-09-13."
+  }
+]
