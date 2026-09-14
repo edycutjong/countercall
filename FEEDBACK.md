@@ -36,6 +36,24 @@ shipped. Nothing here is a wishlist item; every entry cost us a design change.
 
 ---
 
+## What the CALL-E team did with findings 1–4
+
+Replied in the Discord `#support` thread, 2026-09-14, after the 2026-09-06 filing. Verified
+against GitHub the same day:
+
+| Finding | Response | Tracked as |
+|---|---|---|
+| 1 — arrays in Goal results | "We'll discuss array and nested-object support for Goal results" | [#346](https://github.com/CALLE-AI/awesome-phone-call-agents/issues/346), open |
+| 2 — Goals not shareable via API | "ways to reuse Goals through import/export or an authoring API" | [#347](https://github.com/CALLE-AI/awesome-phone-call-agents/issues/347), open |
+| 3 — TS SDK camelCase | Docs updated: the [Goal Runs guide](https://docs.heycall-e.com/goal-runs#sdk-examples) now shows `published_run_spec` → `publishedRunSpec`, `input_schema` → `inputSchema`, `result_schema` → `resultSchema`, with a TypeScript example | [#348](https://github.com/CALLE-AI/awesome-phone-call-agents/issues/348), **closed — shipped** |
+| 4 — silent fixes | "We'll also consider better ways to let users know when fixes are live" | — |
+| 6 — Indonesia | "Calling to Indonesia is currently paused. We don't have a reliable answer-rate estimate to share for Indonesian public-service lines." | — (confirms finding 6; no ETA) |
+
+All three issues were opened 2026-09-07, the day after the survey went in. Findings 5, 7 and 8
+have not yet had a response.
+
+---
+
 ## 1. A Goal Run result cannot carry an array, but a Call result can
 
 **Severity: high — it changed our data model.**
