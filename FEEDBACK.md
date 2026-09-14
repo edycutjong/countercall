@@ -20,6 +20,8 @@ shipped. Nothing here is a wishlist item; every entry cost us a design change.
      ones also in the documentation field, and the what-worked section in "other feedback".
      Refiled 2026-09-14 with findings 1-8 in the "bugs or issues" field, opening line marks
      it as superseding the 2026-09-06 submission; same Devpost username and CALL-E email.
+     Findings 6-8 posted as a reply in the same Discord thread, 2026-09-14:
+       https://discord.com/channels/1493880186826133504/1546014799350206464/1548939495276290118
 
      Submitted twice, both 2026-09-06, identical content. The first went through without a
      Google session, so no receipt was issued — the form's "Login ke Google" link embeds the
@@ -49,8 +51,8 @@ against GitHub the same day:
 | 4 — silent fixes | "We'll also consider better ways to let users know when fixes are live" | — |
 | 6 — Indonesia | "Calling to Indonesia is currently paused. We don't have a reliable answer-rate estimate to share for Indonesian public-service lines." | — (confirms finding 6; no ETA) |
 
-All three issues were opened 2026-09-07, the day after the survey went in. Findings 5, 7 and 8
-have not yet had a response.
+All three issues were opened 2026-09-07, the day after the survey went in. Findings 6, 7 and 8
+were posted to the same thread on 2026-09-14 and have not yet had a response.
 
 ---
 
