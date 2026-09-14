@@ -14,6 +14,7 @@
   <br/>
 
   [![Live demo](https://img.shields.io/badge/▶_Live-countercall.edycu.dev-F2B33D?style=for-the-badge)](https://countercall.edycu.dev)
+  [![Demo video](https://img.shields.io/badge/📽_Demo_video-2:03_on_YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/A3g0GWmx4wY)
   [![Pitch deck](https://img.shields.io/badge/🎤_Pitch-deck-6E8CA8?style=for-the-badge)](https://countercall.edycu.dev/pitch/)
   [![Architecture](https://img.shields.io/badge/🏗_Architecture-diagram-6E8CA8?style=for-the-badge)](https://countercall.edycu.dev/architecture/)
 
