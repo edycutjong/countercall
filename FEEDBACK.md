@@ -4,21 +4,22 @@ Eight findings from building **CounterCall** — an Agent Skill that phones a go
 enquiries line and returns a validated checklist of what to bring — against the Goals API and
 the Calls API between 2026-08-19 and 2026-09-10.
 
-Findings 1–5 were filed with the CALL-E Feedback Survey on 2026-09-06. **Findings 6, 7 and 8
-were found on 2026-09-10 and are not yet filed** — the survey stays open until 2026-09-18, and
-they are the most consequential three in the document: between them they ended this project's
-original target country and forced a rebuild four days before the deadline.
+Findings 1–5 were filed with the CALL-E Feedback Survey on 2026-09-06. Findings 6, 7 and 8
+were found on 2026-09-10 and **all eight were refiled together on 2026-09-14**, superseding the
+first submission. The last three are the most consequential in the document: between them they
+ended this project's original target country and forced a rebuild four days before the deadline.
 
 Each one is a thing we hit while building, with the reproduction and the workaround we
 shipped. Nothing here is a wishlist item; every entry cost us a design change.
 
-<!-- FILING STATUS — FILED 2026-09-06
+<!-- FILING STATUS — FILED 2026-09-06, REFILED 2026-09-14 (all eight findings)
      CALL-E Feedback Survey: submitted 2026-09-06 via
        https://call-e.devpost.com/details/feedback
        (Google Form 1FAIpQLSfGWkt2F_ED6aLatQjtjBX8YEpBVQ47A39yeDd1KQRKX488Lg)
      Findings 1-5 went in the "bugs or issues" field, the two documentation-shaped
      ones also in the documentation field, and the what-worked section in "other feedback".
-     FINDINGS 6, 7 AND 8 ARE NOT YET FILED - added 2026-09-10, refile before 2026-09-18.
+     Refiled 2026-09-14 with findings 1-8 in the "bugs or issues" field, opening line marks
+     it as superseding the 2026-09-06 submission; same Devpost username and CALL-E email.
 
      Submitted twice, both 2026-09-06, identical content. The first went through without a
      Google session, so no receipt was issued — the form's "Login ke Google" link embeds the
