@@ -1,5 +1,5 @@
 <!--
-  PENDING before submission: the demo video URL (one line, under Links).
+  Demo video URL added 2026-09-14.
   Resolved 2026-09-13: benchmark rows and live proof from the two real calls; the example
   card is now the real ICA render, not an invented one. No hero image is shipped — the only
   rendered card that exists is a refusal, and a mock-up of a success is not shipped.
@@ -342,7 +342,7 @@ countercall/
 - **For judges:** [JUDGE.md](JUDGE.md) — the claim, the 30-second path, the receipts
 - **Live site:** <https://countercall.edycu.dev> — no sign-up, no key, free through 2026-10-13
 - **Architecture:** <https://countercall.edycu.dev/architecture/> — every surface and every refusal
-- **Demo video:** <!-- PENDING: video URL (public, YouTube or Vimeo, under 3 minutes) -->
+- **Demo video:** <https://youtu.be/A3g0GWmx4wY> — 2:03, public
 - **Live proof:** [DEMO.md](DEMO.md) — both real calls, ids, unedited transcript, and what was rendered
 
 ## 📄 License

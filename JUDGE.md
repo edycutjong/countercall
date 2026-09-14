@@ -20,7 +20,7 @@ rather than a call that did not happen.
 1. Read one real call, start to finish, in [`DEMO.md`](DEMO.md): the request, the
    unedited `transcript_turns` from `GET /v1/calls/call_h9t6ZZJ_2kG_fxTJXlOQgw`, and what
    `call.mjs` rendered for it — `NO CHECKLIST — result_unextractable`, not a partial card.
-2. Watch the demo video — <!-- PENDING: video URL --> — 2:03. The call beat is that
+2. Watch the demo video — <https://youtu.be/A3g0GWmx4wY> — 2:03. The call beat is that
    transcript revealed at its real offsets, with the call id on screen; CALL-E exposes no
    audio recording, so text is the honest form.
 3. Skim [`skills/countercall/references/safety.md`](skills/countercall/references/safety.md).
@@ -158,7 +158,7 @@ no seeded mode.
 ## Links
 
 - Repo — <https://github.com/edycutjong/countercall>
-- Demo video — <!-- PENDING: video URL -->
+- Demo video — <https://youtu.be/A3g0GWmx4wY>
 - Devpost — https://call-e.devpost.com/
 - The Agent Skill package — [`skills/countercall/`](skills/countercall/)
 - Safety rules — [`references/safety.md`](skills/countercall/references/safety.md)
