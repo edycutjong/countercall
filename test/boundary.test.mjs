@@ -52,12 +52,12 @@ function seed(office) {
 /** Every shape of unusable number the boundary must refuse. */
 const FORBIDDEN = [
   ['a placeholder number', { phone_e164: '+62XXXXXXXXXX', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
-  ['a local-format number', { phone_e164: '0211234567', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
-  ['a number with no source', { phone_e164: '+622112345678', source_url: null, source_checked: '2026-09-03' }],
-  ['a number nobody checked', { phone_e164: '+622112345678', source_url: 'https://x.invalid/', source_checked: null }],
-  ['a number with spaces', { phone_e164: '+62 21 1234 5678', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
-  ['a number with an extension', { phone_e164: '+622112345678x21', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
-  ['a leading-zero country code', { phone_e164: '+0211234567', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
+  ['a local-format number', { phone_e164: '02079460123', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
+  ['a number with no source', { phone_e164: '+442079460123', source_url: null, source_checked: '2026-09-03' }],
+  ['a number nobody checked', { phone_e164: '+442079460123', source_url: 'https://x.invalid/', source_checked: null }],
+  ['a number with spaces', { phone_e164: '+44 20 7946 0123', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
+  ['a number with an extension', { phone_e164: '+442079460123x21', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
+  ['a leading-zero country code', { phone_e164: '+02079460123', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
   ['an empty number', { phone_e164: '', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
   ['a missing number', { source_url: 'https://x.invalid/', source_checked: '2026-09-03' }],
 ];
@@ -78,7 +78,7 @@ describe('permission boundary — the tool refuses to dial', () => {
 
   test('refuses an office that is not in the seed file at all', async () => {
     const { code, stderr } = await attempt(
-      ['--offices', seed({ phone_e164: '+622112345678', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }),
+      ['--offices', seed({ phone_e164: '+442079460123', source_url: 'https://x.invalid/', source_checked: '2026-09-03' }),
         '--office', 'some-other-office', '--procedure', 'p', '--live'],
       { CALLE_API_KEY: 'sk-present', COUNTERCALL_GOAL_ID: 'goal_present' },
     );
@@ -115,7 +115,7 @@ describe('permission boundary — rate discipline', () => {
 });
 
 describe('permission boundary — the default path places no call', () => {
-  const good = { phone_e164: '+622112345678', source_url: 'https://x.invalid/', source_checked: '2026-09-03' };
+  const good = { phone_e164: '+442079460123', source_url: 'https://x.invalid/', source_checked: '2026-09-03' };
 
   test('a fully valid office still does not dial without --live', async () => {
     const { code, stdout } = await attempt(
@@ -162,7 +162,7 @@ describe('permission boundary — the default path places no call', () => {
   });
 
   test('the calls transport still will not dial an unsourced number, key or no key', async () => {
-    const unsourced = { phone_e164: '+622112345678', source_url: null, source_checked: null };
+    const unsourced = { phone_e164: '+442079460123', source_url: null, source_checked: null };
     const { code, stderr } = await attempt(
       ['--offices', seed(unsourced), '--office', 'target', '--procedure', 'p', '--live',
         '--transport', 'calls'],

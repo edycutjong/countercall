@@ -9,7 +9,7 @@ labels: office
 
 **City / jurisdiction**
 
-**Phone number (E.164, e.g. +622112345678)**
+**Phone number (E.164, e.g. +62xxxxxxxxxx)**
 
 **Published source URL**
 The office's *own* page where this number appears. Not a directory, not an aggregator.

@@ -7,7 +7,7 @@ const OFFICE = {
   id: 'imigrasi-jaksel',
   name: 'Kantor Imigrasi Jakarta Selatan',
   city: 'Jakarta Selatan',
-  phone_e164: '+622112345678',
+  phone_e164: '+442079460123',
   source_url: 'https://jakartaselatan.imigrasi.go.id/',
   source_checked: '2026-09-03',
 };

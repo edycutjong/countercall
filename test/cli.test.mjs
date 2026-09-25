@@ -58,7 +58,7 @@ describe('call.mjs is dry by default', () => {
     ]);
     const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
     assert.equal(request.transport, 'goals');
-    assert.equal(request.phone, '+622112345678');
+    assert.equal(request.phone, '+442079460123');
     assert.ok(!('target' in request), 'CreateGoalRunRequest has no target wrapper');
   });
 
@@ -69,7 +69,7 @@ describe('call.mjs is dry by default', () => {
     ]);
     const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
     assert.equal(request.transport, 'calls');
-    assert.deepEqual(request.recipients, [{ phones: ['+622112345678'] }]);
+    assert.deepEqual(request.recipients, [{ phones: ['+442079460123'] }]);
     assert.ok(!('phone' in request), 'CreateCallInput takes recipients, not a bare phone');
   });
 
@@ -141,7 +141,7 @@ describe('call.mjs is dry by default', () => {
     const { stdout } = await cli(CALL, [
       '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
     ]);
-    assert.ok(stdout.includes('would ring +622112345678'));
+    assert.ok(stdout.includes('would ring +442079460123'));
   });
 });
 

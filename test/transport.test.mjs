@@ -23,7 +23,7 @@ const OFFICE = {
   id: 'fixture-office',
   name: 'Fixture Agency',
   city: 'Singapore',
-  phone_e164: '+6561234567',
+  phone_e164: '+442079460125',
   source_url: 'https://x.invalid/contact-us',
   source_checked: '2026-09-10',
   region: 'SG',

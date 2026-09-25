@@ -14,35 +14,35 @@ const GOOD_OFFICE = {
   id: 'imigrasi-jaksel',
   name: 'Kantor Imigrasi Jakarta Selatan',
   city: 'Jakarta Selatan',
-  phone_e164: '+622112345678',
+  phone_e164: '+442079460123',
   source_url: 'https://jakartaselatan.imigrasi.go.id/',
   source_checked: '2026-09-03',
   procedures: ['perpanjangan paspor'],
 };
 
 describe('E164', () => {
-  test('accepts a plausible Indonesian landline', () => {
-    assert.ok(E164.test('+622112345678'));
+  test('accepts an Indonesian-format landline (fake: all-zero subscriber)', () => {
+    assert.ok(E164.test('+622100000000'));
   });
 
-  test('accepts a plausible Indonesian mobile', () => {
-    assert.ok(E164.test('+6281234567890'));
+  test('accepts an Indonesian-format mobile (fake: all-zero subscriber)', () => {
+    assert.ok(E164.test('+6281200000000'));
   });
 
   test('rejects a local-format number — this is how a stranger’s phone rings', () => {
-    assert.ok(!E164.test('0211234567'));
+    assert.ok(!E164.test('02079460123'));
   });
 
   test('rejects a number with spaces', () => {
-    assert.ok(!E164.test('+62 21 1234 5678'));
+    assert.ok(!E164.test('+44 20 7946 0123'));
   });
 
   test('rejects a number with punctuation', () => {
-    assert.ok(!E164.test('+62-21-1234-5678'));
+    assert.ok(!E164.test('+44-20-7946-0123'));
   });
 
   test('rejects a leading zero after the plus', () => {
-    assert.ok(!E164.test('+0211234567'));
+    assert.ok(!E164.test('+02079460123'));
   });
 
   test('rejects a number that is too short', () => {
@@ -54,7 +54,7 @@ describe('E164', () => {
   });
 
   test('rejects an extension suffix', () => {
-    assert.ok(!E164.test('+622112345678x21'));
+    assert.ok(!E164.test('+442079460123x21'));
   });
 });
 
@@ -77,7 +77,7 @@ describe('validateOffice', () => {
   });
 
   test('a non-E.164 number is refused', () => {
-    const problems = validateOffice({ ...GOOD_OFFICE, phone_e164: '0211234567' });
+    const problems = validateOffice({ ...GOOD_OFFICE, phone_e164: '02079460123' });
     assert.ok(problems.some((p) => p.startsWith('not E.164')));
   });
 
