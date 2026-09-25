@@ -51,25 +51,25 @@ describe('call.mjs is dry by default', () => {
     assert.ok(stdout.includes('no call placed'));
   });
 
-  test('the goals dry run prints the exact request, with phone at the top level', async () => {
+  test('the goals dry run prints the request, with phone at the top level and masked', async () => {
     const { stdout } = await cli(CALL, [
       '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
       '--transport', 'goals',
     ]);
     const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
     assert.equal(request.transport, 'goals');
-    assert.equal(request.phone, '+442079460123');
+    assert.equal(request.phone, '+44*******123');
     assert.ok(!('target' in request), 'CreateGoalRunRequest has no target wrapper');
   });
 
-  test('the calls dry run carries the number in recipients, not a phone field', async () => {
+  test('the calls dry run carries the masked number in recipients, not a phone field', async () => {
     const { stdout } = await cli(CALL, [
       '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
       '--transport', 'calls',
     ]);
     const request = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
     assert.equal(request.transport, 'calls');
-    assert.deepEqual(request.recipients, [{ phones: ['+442079460123'] }]);
+    assert.deepEqual(request.recipients, [{ phones: ['+44*******123'] }]);
     assert.ok(!('phone' in request), 'CreateCallInput takes recipients, not a bare phone');
   });
 
@@ -137,12 +137,22 @@ describe('call.mjs is dry by default', () => {
     assert.ok(request.task.includes('personal data'));
   });
 
-  test('the dry run names the number it would ring, so a mistake is visible first', async () => {
+  test('the dry run names the number it would ring, masked, with the office beside it', async () => {
     const { stdout } = await cli(CALL, [
       '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
     ]);
-    assert.ok(stdout.includes('would ring +442079460123'));
+    assert.ok(stdout.includes('would ring +44*******123 (Kantor Fixture Tersumber)'));
   });
+
+  for (const transport of ['goals', 'calls']) {
+    test(`the ${transport} dry run never prints the whole destination number`, async () => {
+      const { stdout, stderr } = await cli(CALL, [
+        '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+        '--transport', transport,
+      ]);
+      assert.ok(!`${stdout}${stderr}`.includes('442079460123'));
+    });
+  }
 });
 
 describe('call.mjs refuses to dial', () => {
@@ -272,6 +282,22 @@ describe('preflight.mjs places no call and needs no credentials', () => {
     ]);
     assert.equal(code, 3);
     assert.ok(stdout.includes('REFUSING TO DIAL'));
+  });
+
+  test('preflight prints the number masked', async () => {
+    const { stdout } = await cli(PREFLIGHT, [
+      '--offices', FIXTURE, '--office', 'fixture-sourced', '--procedure', 'perpanjangan paspor',
+    ]);
+    assert.ok(stdout.includes('+44*******123'));
+    assert.ok(!stdout.includes('442079460123'));
+  });
+
+  test('a refused local-format number is not echoed in full', async () => {
+    const { stderr } = await cli(CALL, [
+      '--offices', FIXTURE, '--office', 'fixture-local-format', '--procedure', 'perpanjangan paspor',
+    ]);
+    assert.ok(stderr.includes('not E.164'));
+    assert.ok(!stderr.includes('02079460123'));
   });
 
   test('preflight shows the idempotency key it would use', async () => {

@@ -23,7 +23,9 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { relative } from 'node:path';
 
-import { parseArgs, validateOffice, idempotencyKey, loadOffices } from '../skills/countercall/scripts/_lib.mjs';
+import {
+  parseArgs, validateOffice, idempotencyKey, loadOffices, sanitizeText,
+} from '../skills/countercall/scripts/_lib.mjs';
 import { validateResult } from '../skills/countercall/scripts/contract.mjs';
 import { selectTransport, missingCredentials } from '../skills/countercall/scripts/transport.mjs';
 import { summarize, toMarkdown } from './bench_stats.mjs';
@@ -111,11 +113,14 @@ if (missing.length) {
 
 const { CalleClient } = await import('@call-e/calle');
 const client = new CalleClient({ apiKey: process.env.CALLE_API_KEY });
+// Provider text is printed and written to bench/records.json, which is committed, so it is
+// sanitised before it reaches either.
+const clean = (text) => sanitizeText(text, { secrets: [process.env.CALLE_API_KEY] });
 try {
   await transport.assertReady(client);
 } catch (error) {
-  console.error(`REFUSING TO DIAL: ${error.message}`);
-  for (const d of error.drift ?? []) console.error(`  - ${d}`);
+  console.error(`REFUSING TO DIAL: ${clean(error.message)}`);
+  for (const d of error.drift ?? []) console.error(`  - ${clean(d)}`);
   process.exit(4);
 }
 console.log(`transport: ${transport.name}`);
@@ -140,14 +145,14 @@ for (const { office, procedure } of pairs) {
   try {
     const outcome = await transport.run(client, office, procedure, key);
     const elapsed = Date.now() - started;
-    const runId = outcome.runId;
+    const runId = outcome.runId == null ? null : clean(outcome.runId);
 
     if (outcome.error) {
-      record = { outcome: outcome.error.code, validated: false, runId, ms: elapsed };
+      record = { outcome: clean(outcome.error.code ?? 'unknown'), validated: false, runId, ms: elapsed };
     } else {
       const invalid = validateResult(outcome.result);
       record = invalid.length
-        ? { outcome: 'result_invalid', validated: false, runId, ms: elapsed, problems: invalid }
+        ? { outcome: 'result_invalid', validated: false, runId, ms: elapsed, problems: invalid.map(clean) }
         : { outcome: 'result', validated: true, runId, ms: elapsed };
     }
     // Which path produced the number matters when the table is read months later.
@@ -158,7 +163,7 @@ for (const { office, procedure } of pairs) {
       validated: false,
       runId: null,
       ms: Date.now() - started,
-      problems: [`${error?.constructor?.name}: ${error?.message}`],
+      problems: [clean(`${error?.constructor?.name}: ${error?.message}`)],
     };
   }
 

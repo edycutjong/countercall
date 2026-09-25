@@ -17,7 +17,9 @@ import {
   selectTransport, missingCredentials, normaliseCall, buildTask,
   goalsTransport, callsTransport,
 } from '../skills/countercall/scripts/transport.mjs';
-import { CONTRACT, contractFields, resultSchemaJSON, validateResult } from '../skills/countercall/scripts/contract.mjs';
+import {
+  CONTRACT, contractFields, emittedSchemaProblems, resultSchemaJSON, validateResult,
+} from '../skills/countercall/scripts/contract.mjs';
 
 const OFFICE = {
   id: 'fixture-office',
@@ -284,5 +286,35 @@ describe('describe() builds the request without placing it', () => {
   test('neither describe() touches the network or needs a client', () => {
     assert.doesNotThrow(() => callsTransport.describe(OFFICE, 'p', 'k'));
     assert.doesNotThrow(() => goalsTransport.describe(OFFICE, 'p', 'k', {}));
+  });
+});
+
+describe('the calls transport checks its contract before dialling', () => {
+  test('the schema this build emits passes the check', async () => {
+    assert.deepEqual(emittedSchemaProblems(), []);
+    await callsTransport.assertReady();
+  });
+
+  test('a truncated schema is refused on the live path, not only in preflight', async () => {
+    const schema = resultSchemaJSON();
+    delete schema.properties.clerk_quote;
+    schema.required = schema.required.filter((f) => f !== 'clerk_quote');
+    await assert.rejects(callsTransport.assertReady(null, {}, schema), (error) => {
+      assert.ok(error.drift.includes('not emitted: clerk_quote'));
+      assert.ok(error.drift.includes('not required: clerk_quote'));
+      return true;
+    });
+  });
+
+  test('an open schema is refused', async () => {
+    const schema = { ...resultSchemaJSON(), additionalProperties: true };
+    await assert.rejects(callsTransport.assertReady(null, {}, schema), (error) => {
+      assert.deepEqual(error.drift, ['additionalProperties is not false']);
+      return true;
+    });
+  });
+
+  test('a missing schema is refused rather than crashing', () => {
+    assert.ok(emittedSchemaProblems(null).length > 0);
   });
 });

@@ -52,7 +52,7 @@ you ask, you get the real thing.
 ### CI / deterministic replay — separate, and never the product
 
 ```bash
-npm test                        # 274 tests, no credentials, no network
+npm test                        # 299 tests, no credentials, no network
 npm run bench -- --report       # recompute from recorded real calls
 ```
 
@@ -291,8 +291,8 @@ $ npm test
       ↳ 1296 rendered cards verified for invented values
       ↳ 8208 single-field corruptions, all rejected
       ↳ 720 unexpected-key injections, all rejected
-# tests 274
-# pass 274
+# tests 299
+# pass 299
 ```
 
 That sweep found a real defect while it was being written: an empty `clerk_quote` validated
