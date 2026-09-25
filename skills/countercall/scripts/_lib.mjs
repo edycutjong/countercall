@@ -30,10 +30,12 @@ export function maskPhone(phone) {
   return s.slice(0, 3) + s.slice(3, -3).replace(/\d/g, '*') + s.slice(-3);
 }
 
-// Phone-like runs: `+` and 8 or more digits, or 9 or more digits without it. Nine keeps
-// dates (2026-09-26, eight digits) and the idempotency key readable. The lookarounds keep
-// digits inside identifiers such as run ids and hashes out of it.
-const PHONE_LIKE = /(?<![\w.+])\+?\d[\d\s().-]{6,}\d(?![\w.])/g;
+// Phone-like runs. With a leading `+`, 8 or more digits, wherever they appear: a vendor code
+// such as `sip_486_to_+442079460123` still carries a dialable number. Without one, 9 or more
+// digits standing alone: nine keeps dates (2026-09-26, eight digits) and the idempotency key
+// readable, and the lookarounds keep digits inside run ids and hashes out of it.
+const PHONE_PLUS = /\+\d[\d\s().-]{6,}\d/g;
+const PHONE_BARE = /(?<![\w.+*])\d[\d\s().-]{7,}\d(?![\w.])/g;
 // Matching control characters is the point of these three, so no-control-regex is off for them.
 /* eslint-disable no-control-regex */
 const ANSI = /\u001b\[[0-?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)?/g;
@@ -62,10 +64,9 @@ export function sanitizeText(text, { secrets = [] } = {}) {
   }
   s = s.replace(ANSI, '').replace(/[\r\n\t]+/g, ' ').replace(CONTROL, '');
   s = s.replace(CREDENTIALS[0], '$1 [redacted]').replace(CREDENTIALS[1], '$1[redacted]');
-  s = s.replace(PHONE_LIKE, (match) => {
-    const digits = match.replace(/\D/g, '').length;
-    return digits >= (match.startsWith('+') ? 8 : 9) ? maskPhone(match) : match;
-  });
+  const digits = (match) => match.replace(/\D/g, '').length;
+  s = s.replace(PHONE_PLUS, (m) => (digits(m) >= 8 ? maskPhone(m) : m));
+  s = s.replace(PHONE_BARE, (m) => (digits(m) >= 9 ? maskPhone(m) : m));
   return s.length > MAX_LENGTH ? `${s.slice(0, MAX_LENGTH)}... [truncated]` : s;
 }
 
