@@ -249,7 +249,8 @@ in. That asymmetry drives the rules in
 an immediate stop on refusal; one call per office, per procedure, per day, enforced by the
 idempotency key; published general-enquiries lines only, during opening hours; never a
 personal mobile, never an emergency or crisis line; and no personal data sent as a call
-variable — the clerk is being asked about a procedure, not about a person.
+variable — the clerk is being asked about a procedure, not about a person. Opening hours are
+the operator's to check: the seed file has no hours and no script enforces them.
 
 CounterCall **never infers a phone number**. A number enters the seed file only when a human
 has read it off the office's own published page and recorded the URL and the date they
