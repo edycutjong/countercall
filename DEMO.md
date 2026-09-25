@@ -200,11 +200,12 @@ The agent announced itself at 0s, as the task requires. The line is a touch-tone
 CALL-E cannot send DTMF, so every "press 1" was answered in words — nine times across two
 menus — until the menu gave up. The API's own summary: *"The call reached ICA’s automated phone menu, but the goal was not completed. The assistant did not make the required keypad selections, so the call ended before reaching an officer or collecting passport-renewal information."*
 
-What `call.mjs --live` printed for it, through the shipped normaliser and renderer:
+What `call.mjs --live` printed for it, through the shipped normaliser and renderer.
+*Real call, 2026-09-10.* The number is masked as `call.mjs` prints it since the output-safety fix; the rest is the output as recorded.
 
 ```console
 $ node skills/countercall/scripts/call.mjs --office ica-sg --procedure "passport renewal" --live
-Dialling +6563916100 via the calls transport ...
+Dialling +65*****100 via the calls transport ...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Immigration & Checkpoints Authority (ICA)
   passport renewal
@@ -227,11 +228,12 @@ $ echo $?
 
 **Call 2 — MOM Singapore, `call_Xpb-x1M9vaCSxPoJWAhpUQ`, 2026-09-10.** `+65 6438 5122`
 ([mom.gov.sg/contact-us](https://www.mom.gov.sg/contact-us)), *work pass renewal*. The
-attempt failed at dial with SIP `486 Busy Here`; no transcript exists. Rendered:
+attempt failed at dial with SIP `486 Busy Here`; no transcript exists. Rendered below.
+*Real call, 2026-09-10.* The number is masked as `call.mjs` prints it since the output-safety fix; the rest is the output as recorded.
 
 ```console
 $ node skills/countercall/scripts/call.mjs --office mom-sg --procedure "work pass renewal" --live
-Dialling +6564385122 via the calls transport ...
+Dialling +65*****122 via the calls transport ...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Ministry of Manpower (MOM)
   work pass renewal

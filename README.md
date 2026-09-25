@@ -60,11 +60,13 @@ A filled card carries the documents in the clerk's own words, *Documents* (origi
 copies / both), *Fee* (omitted when the clerk did not know — never guessed), *Payment*,
 *Appointment*, a certainty line (*confident / unsure / refused*) and the clerk's verbatim
 sentence. **No real call has produced one yet**, so the card shown here is not a mock-up of
-one; it is what the first real call actually rendered, through the shipped code:
+one; it is what the first real call actually rendered, through the shipped code.
+
+*Real call, 2026-09-10.* The number is masked as `call.mjs` prints it since the output-safety fix; the rest is the output as recorded.
 
 ```
 $ node skills/countercall/scripts/call.mjs --office ica-sg --procedure "passport renewal" --live
-Dialling +6563916100 via the calls transport ...
+Dialling +65*****100 via the calls transport ...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Immigration & Checkpoints Authority (ICA)
   passport renewal
