@@ -17,9 +17,7 @@ import {
   selectTransport, missingCredentials, normaliseCall, buildTask,
   goalsTransport, callsTransport,
 } from '../skills/countercall/scripts/transport.mjs';
-import {
-  CONTRACT, contractFields, emittedSchemaProblems, resultSchemaJSON, validateResult,
-} from '../skills/countercall/scripts/contract.mjs';
+import { CONTRACT, contractFields, resultSchemaJSON, validateResult } from '../skills/countercall/scripts/contract.mjs';
 
 const OFFICE = {
   id: 'fixture-office',
@@ -291,7 +289,6 @@ describe('describe() builds the request without placing it', () => {
 
 describe('the calls transport checks its contract before dialling', () => {
   test('the schema this build emits passes the check', async () => {
-    assert.deepEqual(emittedSchemaProblems(), []);
     await callsTransport.assertReady();
   });
 
@@ -314,7 +311,10 @@ describe('the calls transport checks its contract before dialling', () => {
     });
   });
 
-  test('a missing schema is refused rather than crashing', () => {
-    assert.ok(emittedSchemaProblems(null).length > 0);
+  test('a missing schema is refused rather than crashing', async () => {
+    await assert.rejects(callsTransport.assertReady(null, {}, null), (error) => {
+      assert.ok(error.drift.length > 0);
+      return true;
+    });
   });
 });

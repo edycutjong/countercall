@@ -22,6 +22,12 @@
  * A test that passes `--live` to a pure function (`parseArgs(['--live'])`) spawns nothing and
  * cannot dial, so it is not subject to rule 2.
  *
+ *   3. The one exception to rule 2: a test that spawns through `sandboxed(`. That helper, in
+ *      live-output.test.mjs, runs a copy of the scripts whose only `@call-e/calle` is a fake
+ *      with no network code, and proves the fake is what resolves before any test runs. It
+ *      exists to test what the live paths print and record, which a refused run never
+ *      reaches.
+ *
  *   node scripts/check_no_dial.mjs
  *
  * Exit 0 = no test can dial, 1 = a test might.
@@ -37,7 +43,10 @@ const TEST_DIR = join(ROOT, 'test');
 const DIAL_CALL = /\bgoals\s*\.\s*run\s*\(/;
 
 /** A test spawns a subprocess through one of these helpers. */
-const SPAWNS = /\b(?:attempt|cli)\s*\(/;
+const SPAWNS = /\b(?:attempt|cli|sandboxed)\s*\(/;
+
+/** Rule 3: spawned against the fake SDK, in a sandbox the real one cannot be loaded from. */
+const SANDBOXED = /\bsandboxed\s*\(/;
 
 /**
  * `--live` as an actual ARGUMENT, not as prose.
@@ -54,6 +63,7 @@ const REFUSED = /assert\s*\.\s*equal\s*\(\s*code\s*,\s*[1-9]\d*/;
 
 const failures = [];
 let spawningLiveTests = 0;
+let sandboxedLiveTests = 0;
 
 for (const file of readdirSync(TEST_DIR).filter((f) => f.endsWith('.test.mjs')).sort()) {
   const src = readFileSync(join(TEST_DIR, file), 'utf8');
@@ -71,6 +81,10 @@ for (const file of readdirSync(TEST_DIR).filter((f) => f.endsWith('.test.mjs')).
     if (!/^test\s*\(/.test(block)) continue;   // the file preamble, not a test
     if (!LIVE_ARG.test(block)) continue;
     if (!SPAWNS.test(block)) continue;         // pure-function test, cannot dial
+    if (SANDBOXED.test(block) && !/\b(?:attempt|cli)\s*\(/.test(block)) {
+      sandboxedLiveTests++;
+      continue;
+    }
     spawningLiveTests++;
     if (REFUSED.test(block)) continue;
     const name = block.match(/test\s*\(\s*[`'"]([^`'"]+)/)?.[1] ?? '(unnamed)';
@@ -85,4 +99,5 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`\n  ✓ no test can dial — ${spawningLiveTests} --live tests, all asserting refusal\n`);
+console.log(`\n  ✓ no test can dial — ${spawningLiveTests} --live tests, all asserting refusal; `
+  + `${sandboxedLiveTests} against the fake SDK\n`);

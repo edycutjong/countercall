@@ -30,7 +30,7 @@ rather than a call that did not happen.
 To run it yourself, no credentials needed:
 
 ```bash
-npm install && npm test        # 299 tests
+npm install && npm test        # 309 tests
 npm run bench -- --plan        # prints the call plan; dials nothing
 ```
 
@@ -40,7 +40,7 @@ Verifiable numbers only. Anything not yet measured is marked as such rather than
 
 | | |
 |---|---|
-| Tests | **299**, passing, no credentials required |
+| Tests | **309**, passing, no credentials required |
 | Contract cases exhaustively verified | **11,520** (see below) |
 | CALL-E `GoalRunError` codes routed | **8 of 8** in the published schema |
 | Live CALL-E integration tests | **7** — real API reads, skipped loudly without a key |
@@ -119,7 +119,7 @@ request and stops. That is the opposite of a demo mode: there is no flag that ma
 project *simulate* a call, and no mocked or replayed provider anywhere in the tree.
 
 **CI / deterministic replay** (separate, and never the product):
-`npm test` runs 299 tests with no credentials. `npm run bench -- --report` recomputes the
+`npm test` runs 309 tests with no credentials. `npm run bench -- --report` recomputes the
 benchmark from recorded real calls; it refuses to render a table from zero records and has
 no seeded mode.
 
